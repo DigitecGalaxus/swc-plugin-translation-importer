@@ -1,5 +1,4 @@
 use serde::{Deserialize, Serialize};
-use std::fs;
 use swc_plugin::{ast::*, plugin_transform};
 
 /// Static plugin configuration.
@@ -27,14 +26,7 @@ impl TransformVisitor {
     }
 }
 
-impl VisitMut for TransformVisitor {
-    fn visit_mut_var_declarator(&mut self, var_declarator: &mut VarDeclarator) {
-        if let Pat::Ident(BindingIdent { id, .. }) = &mut var_declarator.name {
-            let text = fs::read_to_string("input.txt").unwrap();
-            id.sym = text.into();
-        }
-    }
-}
+impl VisitMut for TransformVisitor {}
 
 /// Transforms a [`Program`].
 ///
@@ -64,7 +56,7 @@ mod tests {
         swc_ecma_parser::Syntax::default(),
         |_| transform_visitor(Default::default()),
         does_absolutely_nothing,
-        r#"const original_name = "Hello, world!";"#,
-        r#"const nice = "Hello, world!";"#
+        r#"const t = "Hello, world!";"#,
+        r#"const t = "Hello, world!";"#
     );
 }
