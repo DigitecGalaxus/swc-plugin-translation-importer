@@ -18,6 +18,7 @@ crate-type = ["cdylib"]
 serde = "1.0.136"
 serde_json = "1.0.79"
 swc_plugin = "0.30.0"
+sha2 = "0.10.2"
 
 [dev-dependencies]
 swc_ecma_parser = "0.91.13"
