@@ -18,7 +18,13 @@ impl TransformVisitor {
     }
 }
 
-impl VisitMut for TransformVisitor {}
+impl VisitMut for TransformVisitor {
+    fn visit_mut_call_expr(&mut self, call_expr: &mut CallExpr) {
+        if self.config.environment == Environment::Test {
+            return;
+        }
+    }
+}
 
 /// Transforms a [`Program`].
 ///

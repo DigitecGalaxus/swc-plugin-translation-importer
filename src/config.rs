@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 /// Static plugin configuration.
-#[derive(Default, Serialize, Deserialize)]
+#[derive(Debug, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 #[serde(deny_unknown_fields)]
 pub struct Config {
@@ -12,7 +12,7 @@ pub struct Config {
 }
 
 /// The target environment.
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum Environment {
     /// Development mode uses fallback for unknown words and an import for all
