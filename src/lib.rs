@@ -5,13 +5,16 @@ mod helpers;
 
 pub use config::{Config, Environment};
 
-/// TODO
-/// - check if the description for Environment::Production is still accurate,
-///   namely whether it's still the case that webpack and terser are involved
-///   (webpack likely not).
-/// - see if swc automatically outputs information about the span where an
-///   error occurred or if it makes sense to print it manually as is the case
-///   in the babel plugin.
+// TODO
+// - check if the description for Environment::Production is still accurate,
+//   namely whether it's still the case that webpack and terser are involved
+//   (webpack likely not).
+// - see if swc automatically outputs information about the span where an error
+//   occurred or if it makes sense to print it manually as is the case in the
+//   babel plugin.
+// - Take env from plugin context as per
+//   https://github.com/swc-project/swc/discussions/3540#discussioncomment-2227604
+//   https://github.com/swc-project/swc/pull/3677/files
 
 struct TransformVisitor {
     config: Config,
