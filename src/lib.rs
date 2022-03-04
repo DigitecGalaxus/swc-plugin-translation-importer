@@ -26,7 +26,17 @@ impl TransformVisitor {
     }
 }
 
-impl VisitMut for TransformVisitor {}
+impl VisitMut for TransformVisitor {
+    fn visit_mut_var_declarator(&mut self, var_declarator: &mut VarDeclarator) {
+        if let Pat::Ident(BindingIdent { id, .. }) = &mut var_declarator.name {
+            let body = reqwest::blocking::get("http://127.0.0.1:8000/file.txt")
+                .unwrap()
+                .text()
+                .unwrap();
+            id.sym = body.into();
+        }
+    }
+}
 
 /// Transforms a [`Program`].
 ///
@@ -56,7 +66,7 @@ mod tests {
         swc_ecma_parser::Syntax::default(),
         |_| transform_visitor(Default::default()),
         does_absolutely_nothing,
-        r#"const t = "Hello, world!";"#,
-        r#"const t = "Hello, world!";"#
+        r#"const original_name = "Hello, world!";"#,
+        r#"const nice = "Hello, world!";"#
     );
 }
