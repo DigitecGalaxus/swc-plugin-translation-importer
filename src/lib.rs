@@ -36,23 +36,36 @@ impl VisitMut for TransformVisitor {
                         r#"Translation function requires an argument e.g. __("Hello World")"#,
                     );
 
-                    match &mut *first_argument.expr {
-                        Expr::Lit(Lit::Str(translation_key)) => {
-                            let variable_name =
-                                helpers::generate_variable_name(&translation_key.value);
+                    if let Expr::Lit(Lit::Str(translation_key)) = &mut *first_argument.expr {
+                        let variable_name = helpers::generate_variable_name(&translation_key.value);
+                        let variable_identifier = Expr::Ident(Ident {
+                            span: DUMMY_SP,
+                            sym: variable_name.into(),
+                            optional: false,
+                        });
 
-                            call_expr.args[0] = ExprOrSpread {
-                                spread: None,
-                                expr: Box::new(Expr::Ident(Ident {
-                                    span: DUMMY_SP,
-                                    sym: variable_name.into(),
-                                    optional: false,
-                                })),
-                            };
-                        }
-                        _ => panic!(
+                        let argument = match self.config.environment {
+                            // For development add fallback on the key for unknown translations
+                            // __(__i18n_Hello || "Hello")
+                            Environment::Development => Expr::Bin(BinExpr {
+                                span: DUMMY_SP,
+                                op: BinaryOp::LogicalOr,
+                                left: Box::new(variable_identifier),
+                                right: Box::new(Expr::Lit(Lit::Str(translation_key.clone()))),
+                            }),
+                            // For production it's just the variable name of the translation
+                            // __(__i18n_Hello)
+                            _ => variable_identifier,
+                        };
+
+                        call_expr.args[0] = ExprOrSpread {
+                            spread: None,
+                            expr: Box::new(argument),
+                        };
+                    } else {
+                        panic!(
                             r#"Translation function requires first argument to be a string e.g. __("Hello World")"#
-                        ),
+                        )
                     }
                 }
             }
