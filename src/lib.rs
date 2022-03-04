@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use std::fs;
 use swc_plugin::{ast::*, plugin_transform};
 
 /// Static plugin configuration.
@@ -29,11 +30,8 @@ impl TransformVisitor {
 impl VisitMut for TransformVisitor {
     fn visit_mut_var_declarator(&mut self, var_declarator: &mut VarDeclarator) {
         if let Pat::Ident(BindingIdent { id, .. }) = &mut var_declarator.name {
-            let body = reqwest::blocking::get("http://127.0.0.1:8000/file.txt")
-                .unwrap()
-                .text()
-                .unwrap();
-            id.sym = body.into();
+            let text = fs::read_to_string("input.txt").unwrap();
+            id.sym = text.into();
         }
     }
 }
