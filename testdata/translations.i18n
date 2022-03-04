@@ -1,0 +1,20 @@
+{
+  "DeleteAccountCheck_Title": {
+    "de-CH": "Benutzerkonto löschen",
+    "en-US": "Delete user account",
+    "fr-CH": "Supprimer le compte client",
+    "it-CH": "Elimina conto utente"
+  },
+  "Back to welcome page": {
+    "de-CH": "Zurück zur Startseite",
+    "en-US": "Back to the landing page",
+    "fr-CH": "Retour à la page d'accueil",
+    "it-CH": "Torna alla pagina iniziale"
+  },
+  "Follow this link to the [0]:[1]": {
+    "de-CH": "Folge diesem Link zum [0]: [1]",
+    "en-US": "Follow this link to the [0]:[1]",
+    "fr-CH": "Cliquez sur ce lien pour consulter la [0]: [1]",
+    "it-CH": "Seguite questo link a [0]: [1]"
+  }
+}

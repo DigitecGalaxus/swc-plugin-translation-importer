@@ -5,7 +5,10 @@ use swc_plugin::{ast::*, plugin_transform};
 #[derive(Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 #[serde(deny_unknown_fields)]
-pub struct Config {}
+pub struct Config {
+    /// Path to `translations.i18n` cache.
+    pub translation_cache: String,
+}
 
 /// Additional context for the plugin.
 #[derive(Serialize, Deserialize)]
@@ -54,7 +57,9 @@ mod tests {
 
     test!(
         swc_ecma_parser::Syntax::default(),
-        |_| transform_visitor(Default::default()),
+        |_| transform_visitor(Config {
+            translation_cache: "testdata/translations.i18n".into()
+        }),
         does_absolutely_nothing,
         r#"const t = "Hello, world!";"#,
         r#"const t = "Hello, world!";"#
