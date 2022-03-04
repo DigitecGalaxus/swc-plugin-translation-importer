@@ -1,14 +1,12 @@
-use serde::{Deserialize, Serialize};
 use swc_plugin::{ast::*, plugin_transform};
 
-/// Static plugin configuration.
-#[derive(Default, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-#[serde(deny_unknown_fields)]
-pub struct Config {
-    /// Path to `translations.i18n` cache.
-    pub translation_cache: String,
-}
+mod config;
+
+pub use config::{Config, Environment};
+
+// TODO: check if the description for Environment::Production is still
+// accurate, namely whether it's still the case that webpack and terser are
+// involved (webpack likely not).
 
 struct TransformVisitor {
     config: Config,
@@ -47,7 +45,8 @@ mod tests {
     test!(
         swc_ecma_parser::Syntax::default(),
         |_| transform_visitor(Config {
-            translation_cache: "testdata/translations.i18n".into()
+            translation_cache: "testdata/translations.i18n".into(),
+            ..Default::default()
         }),
         does_absolutely_nothing,
         r#"const t = "Hello, world!";"#,
