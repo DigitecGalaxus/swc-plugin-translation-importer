@@ -4,9 +4,13 @@ mod config;
 
 pub use config::{Config, Environment};
 
-// TODO: check if the description for Environment::Production is still
-// accurate, namely whether it's still the case that webpack and terser are
-// involved (webpack likely not).
+/// TODO
+/// - check if the description for Environment::Production is still accurate,
+///   namely whether it's still the case that webpack and terser are involved
+///   (webpack likely not).
+/// - see if swc automatically outputs information about the span where an
+///   error occurred or if it makes sense to print it manually as is the case
+///   in the babel plugin.
 
 struct TransformVisitor {
     config: Config,
@@ -22,6 +26,26 @@ impl VisitMut for TransformVisitor {
     fn visit_mut_call_expr(&mut self, call_expr: &mut CallExpr) {
         if self.config.environment == Environment::Test {
             return;
+        }
+
+        if let Callee::Expr(expr) = &mut call_expr.callee {
+            if let Expr::Ident(id) = &mut **expr {
+                if &id.sym == "__" {
+                    let first_argument = call_expr.args.first_mut().expect(
+                        r#"Translation function requires an argument e.g. __("Hello World")"#,
+                    );
+
+                    match &mut *first_argument.expr {
+                        Expr::Lit(Lit::Str(translation_key)) => {
+                            let new_key = format!("{}-suffix", translation_key.value);
+                            translation_key.value = new_key.into();
+                        }
+                        _ => panic!(
+                            r#"Translation function requires first argument to be a string e.g. __("Hello World")"#
+                        ),
+                    }
+                }
+            }
         }
     }
 }
