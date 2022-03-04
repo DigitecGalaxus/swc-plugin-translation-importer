@@ -10,15 +10,6 @@ pub struct Config {
     pub translation_cache: String,
 }
 
-/// Additional context for the plugin.
-#[derive(Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct Context {
-    /// The name of the current file.
-    #[serde(default)]
-    pub filename: Option<String>,
-}
-
 struct TransformVisitor {
     config: Config,
 }
@@ -37,11 +28,9 @@ impl VisitMut for TransformVisitor {}
 ///
 /// - `program` - The SWC [`Program`] to transform.
 /// - `config` - [`Config`] as JSON.
-/// - `context` - [`Context`] as JSON.
 #[plugin_transform]
-pub fn process_transform(program: Program, config: String, context: String) -> Program {
+pub fn process_transform(program: Program, config: String, _context: String) -> Program {
     let config: Config = serde_json::from_str(&config).expect("failed to parse plugin config");
-    let context: Context = serde_json::from_str(&context).expect("failed to parse plugin context");
 
     program.fold_with(&mut as_folder(TransformVisitor::new(config)))
 }
