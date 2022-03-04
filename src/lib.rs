@@ -1,4 +1,4 @@
-use swc_plugin::{ast::*, plugin_transform};
+use swc_plugin::{ast::*, plugin_transform, syntax_pos::DUMMY_SP};
 
 mod config;
 mod helpers;
@@ -38,8 +38,17 @@ impl VisitMut for TransformVisitor {
 
                     match &mut *first_argument.expr {
                         Expr::Lit(Lit::Str(translation_key)) => {
-                            let new_key = format!("{}-suffix", translation_key.value);
-                            translation_key.value = new_key.into();
+                            let variable_name =
+                                helpers::generate_variable_name(&translation_key.value);
+
+                            call_expr.args[0] = ExprOrSpread {
+                                spread: None,
+                                expr: Box::new(Expr::Ident(Ident {
+                                    span: DUMMY_SP,
+                                    sym: variable_name.into(),
+                                    optional: false,
+                                })),
+                            };
                         }
                         _ => panic!(
                             r#"Translation function requires first argument to be a string e.g. __("Hello World")"#
