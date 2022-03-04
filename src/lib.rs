@@ -99,7 +99,7 @@ if (foo) console.log(foo);
 __("Hello World!!");
 __("Hello World??");"#;
 
-    fn transform_visitor(config: Config) -> impl 'static + Fold + VisitMut {
+    fn transform_visitor(config: Config) -> impl Fold {
         as_folder(TransformVisitor::new(config))
     }
 
