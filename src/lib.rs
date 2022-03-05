@@ -29,16 +29,42 @@ impl TransformVisitor {
         }
     }
 
-    fn dev_imports(&self) -> ModuleItem {
-        ModuleItem::ModuleDecl(ModuleDecl::Import(ImportDecl {
-            span: DUMMY_SP,
-            specifiers: self.import_specifiers(),
-            src: format!("{}?dev", self.config.translation_cache).into(),
-            type_only: false,
-            asserts: None,
-        }))
+    /// Returns the appropriate import declarations depending on the
+    /// environment.
+    fn imports(&self) -> Vec<ModuleItem> {
+        match self.context.env_name {
+            Environment::Development => self.dev_imports(),
+            _ => self.prod_imports(),
+        }
     }
 
+    /// Returns the import declarations (actually it's a single one) for dev.
+    ///
+    /// ```javascript
+    /// import { __i18n_096c0a72c31f9a2d65126d8e8a401a2ab2f2e21d0a282a6ffe6642bbef65ffd9, __i18n_b357e65520993c7fdce6b04ccf237a3f88a0f77dbfdca784f5d646b5b59e498c } from "../../.cache/translations.i18n?dev";
+    /// ```
+    fn dev_imports(&self) -> Vec<ModuleItem> {
+        let import_specifiers = self.import_specifiers();
+
+        if import_specifiers.is_empty() {
+            vec![]
+        } else {
+            vec![ModuleItem::ModuleDecl(ModuleDecl::Import(ImportDecl {
+                span: DUMMY_SP,
+                specifiers: import_specifiers,
+                src: format!("{}?dev", self.config.translation_cache).into(),
+                type_only: false,
+                asserts: None,
+            }))]
+        }
+    }
+
+    /// Returns the import declarations for prod.
+    ///
+    /// ```javascript
+    /// import __i18n_096c0a72c31f9a2d65126d8e8a401a2ab2f2e21d0a282a6ffe6642bbef65ffd9 from "../../.cache/translations.i18n?=096c0a72c31f9a2d65126d8e8a401a2ab2f2e21d0a282a6ffe6642bbef65ffd9";
+    /// import __i18n_b357e65520993c7fdce6b04ccf237a3f88a0f77dbfdca784f5d646b5b59e498c from "../../.cache/translations.i18n?=b357e65520993c7fdce6b04ccf237a3f88a0f77dbfdca784f5d646b5b59e498c";
+    /// ```
     fn prod_imports(&self) -> Vec<ModuleItem> {
         self.import_specifiers()
             .iter()
@@ -55,6 +81,7 @@ impl TransformVisitor {
             .collect()
     }
 
+    /// Returns all import specifiers based on the collected variable names.
     fn import_specifiers(&self) -> Vec<ImportSpecifier> {
         self.import_variables
             .iter()
@@ -82,12 +109,7 @@ impl VisitMut for TransformVisitor {
 
         module_items.visit_mut_children_with(self);
 
-        let imports = match self.context.env_name {
-            Environment::Development => vec![self.dev_imports()],
-            _ => self.prod_imports(),
-        };
-
-        module_items.splice(..0, imports);
+        module_items.splice(..0, self.imports());
     }
 
     fn visit_mut_call_expr(&mut self, call_expr: &mut CallExpr) {
@@ -220,5 +242,15 @@ __(__i18n_b357e65520993c7fdce6b04ccf237a3f88a0f77dbfdca784f5d646b5b59e498c);"#
         r#"const foo = bar(__("other_translation"));"#,
         r#"import { __i18n_c4622ceee64504cbc2c5b05ecb9e66c4235c6d03826437c16da0ce2e061479df } from "../../.cache/translations.i18n?=__i18n_c4622ceee64504cbc2c5b05ecb9e66c4235c6d03826437c16da0ce2e061479df";
 const foo = bar(__(__i18n_c4622ceee64504cbc2c5b05ecb9e66c4235c6d03826437c16da0ce2e061479df));"#
+    );
+
+    test!(
+        swc_ecma_parser::Syntax::default(),
+        |_| transform_visitor(Context {
+            env_name: Environment::Development,
+        }),
+        no_usages,
+        r#"const foo = "Hello, world!";"#,
+        r#"const foo = "Hello, world!";"#
     );
 }
