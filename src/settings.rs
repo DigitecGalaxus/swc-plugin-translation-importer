@@ -15,6 +15,8 @@ pub struct Config {
 pub struct Context {
     /// The target environment (from `NODE_ENV`).
     pub env_name: Environment,
+    /// The name of the current file.
+    pub filename: String,
 }
 
 /// The target environment.
@@ -48,10 +50,14 @@ mod tests {
     fn enum_serialization() {
         let context = Context {
             env_name: Environment::Production,
+            filename: "irrelevant".into(),
         };
 
         let serialized = serde_json::to_string(&context).unwrap();
 
-        assert_eq!(r#"{"envName":"production"}"#, &serialized);
+        assert_eq!(
+            r#"{"envName":"production","filename":"irrelevant"}"#,
+            &serialized
+        );
     }
 }

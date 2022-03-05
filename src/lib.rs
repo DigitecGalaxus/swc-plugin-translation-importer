@@ -10,9 +10,6 @@ pub use settings::{Config, Context, Environment};
 // - check if the description for Environment::Production is still accurate,
 //   namely whether it's still the case that webpack and terser are involved
 //   (webpack likely not).
-// - see if swc automatically outputs information about the span where an error
-//   occurred or if it makes sense to print it manually as is the case in the
-//   babel plugin.
 
 struct TransformVisitor {
     config: Config,
@@ -118,9 +115,10 @@ impl VisitMut for TransformVisitor {
         if let Callee::Expr(expr) = &mut call_expr.callee {
             if let Expr::Ident(id) = &mut **expr {
                 if &id.sym == "__" {
-                    let first_argument = call_expr.args.first_mut().expect(
-                        r#"Translation function requires an argument e.g. __("Hello World")"#,
-                    );
+                    let first_argument = call_expr.args.first_mut().expect(&format!(
+                        r#"Translation function requires an argument e.g. __("Hello World") in {}"#,
+                        self.context.filename
+                    ));
 
                     if let Expr::Lit(Lit::Str(translation_key)) = &mut *first_argument.expr {
                         let variable_name = helpers::generate_variable_name(&translation_key.value);
@@ -153,7 +151,8 @@ impl VisitMut for TransformVisitor {
                         self.import_variables.insert(variable_name);
                     } else {
                         panic!(
-                            r#"Translation function requires first argument to be a string e.g. __("Hello World")"#
+                            r#"Translation function requires first argument to be a string e.g. __("Hello World") in {}"#,
+                            self.context.filename
                         )
                     }
                 }
@@ -188,20 +187,21 @@ if (foo) console.log(foo);
 __("Hello World!!");
 __("Hello World??");"#;
 
-    fn transform_visitor(context: Context) -> impl Fold {
+    fn transform_visitor(environment: Environment) -> impl Fold {
         as_folder(TransformVisitor::new(
             Config {
                 translation_cache: "../../.cache/translations.i18n".into(),
             },
-            context,
+            Context {
+                env_name: environment,
+                filename: "irrelevant".into(),
+            },
         ))
     }
 
     test!(
         swc_ecma_parser::Syntax::default(),
-        |_| transform_visitor(Context {
-            env_name: Environment::Development,
-        }),
+        |_| transform_visitor(Environment::Development),
         transpile_dev_mode,
         SOURCE,
         r#"import { __i18n_096c0a72c31f9a2d65126d8e8a401a2ab2f2e21d0a282a6ffe6642bbef65ffd9, __i18n_b357e65520993c7fdce6b04ccf237a3f88a0f77dbfdca784f5d646b5b59e498c } from "../../.cache/translations.i18n?dev";
@@ -213,9 +213,7 @@ __(__i18n_b357e65520993c7fdce6b04ccf237a3f88a0f77dbfdca784f5d646b5b59e498c || "H
 
     test!(
         swc_ecma_parser::Syntax::default(),
-        |_| transform_visitor(Context {
-            env_name: Environment::Test,
-        }),
+        |_| transform_visitor(Environment::Test),
         no_transpile_test_mode,
         SOURCE,
         SOURCE
@@ -223,9 +221,7 @@ __(__i18n_b357e65520993c7fdce6b04ccf237a3f88a0f77dbfdca784f5d646b5b59e498c || "H
 
     test!(
         swc_ecma_parser::Syntax::default(),
-        |_| transform_visitor(Context {
-            env_name: Environment::Production,
-        }),
+        |_| transform_visitor(Environment::Production),
         transpile_prod_mode,
         SOURCE,
         r#"import __i18n_096c0a72c31f9a2d65126d8e8a401a2ab2f2e21d0a282a6ffe6642bbef65ffd9 from "../../.cache/translations.i18n?=096c0a72c31f9a2d65126d8e8a401a2ab2f2e21d0a282a6ffe6642bbef65ffd9";
@@ -238,9 +234,7 @@ __(__i18n_b357e65520993c7fdce6b04ccf237a3f88a0f77dbfdca784f5d646b5b59e498c);"#
 
     test!(
         swc_ecma_parser::Syntax::default(),
-        |_| transform_visitor(Context {
-            env_name: Environment::Production,
-        }),
+        |_| transform_visitor(Environment::Production),
         nested_code,
         r#"const foo = bar(__("other_translation"));"#,
         r#"import { __i18n_c4622ceee64504cbc2c5b05ecb9e66c4235c6d03826437c16da0ce2e061479df } from "../../.cache/translations.i18n?=__i18n_c4622ceee64504cbc2c5b05ecb9e66c4235c6d03826437c16da0ce2e061479df";
@@ -249,9 +243,7 @@ const foo = bar(__(__i18n_c4622ceee64504cbc2c5b05ecb9e66c4235c6d03826437c16da0ce
 
     test!(
         swc_ecma_parser::Syntax::default(),
-        |_| transform_visitor(Context {
-            env_name: Environment::Development,
-        }),
+        |_| transform_visitor(Environment::Development),
         no_usages,
         r#"const foo = "Hello, world!";"#,
         r#"const foo = "Hello, world!";"#
