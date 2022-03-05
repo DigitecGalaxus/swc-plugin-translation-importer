@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 /// Static plugin configuration.
-#[derive(Debug, Default, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 #[serde(deny_unknown_fields)]
 pub struct Config {
@@ -38,12 +38,6 @@ pub enum Environment {
     /// import __i18n_ItemNumber from "../translations.i18n?ItemNumber"
     /// ```
     Production,
-}
-
-impl Default for Environment {
-    fn default() -> Self {
-        Environment::Development
-    }
 }
 
 #[cfg(test)]
