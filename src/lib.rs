@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::collections::BTreeSet;
 use swc_plugin::{ast::*, plugin_transform, syntax_pos::DUMMY_SP};
 
 mod config;
@@ -19,14 +19,14 @@ pub use config::{Config, Environment};
 
 struct TransformVisitor {
     config: Config,
-    import_variables: HashSet<String>,
+    import_variables: BTreeSet<String>,
 }
 
 impl TransformVisitor {
     pub fn new(config: Config) -> Self {
         Self {
             config,
-            import_variables: HashSet::new(),
+            import_variables: BTreeSet::new(),
         }
     }
 
@@ -202,7 +202,7 @@ __(__i18n_b357e65520993c7fdce6b04ccf237a3f88a0f77dbfdca784f5d646b5b59e498c || "H
         transpile_prod_mode,
         SOURCE,
         r#"import __i18n_096c0a72c31f9a2d65126d8e8a401a2ab2f2e21d0a282a6ffe6642bbef65ffd9 from "../../.cache/translations.i18n?=096c0a72c31f9a2d65126d8e8a401a2ab2f2e21d0a282a6ffe6642bbef65ffd9";
-        import __i18n_b357e65520993c7fdce6b04ccf237a3f88a0f77dbfdca784f5d646b5b59e498c from "../../.cache/translations.i18n?=b357e65520993c7fdce6b04ccf237a3f88a0f77dbfdca784f5d646b5b59e498c";
+import __i18n_b357e65520993c7fdce6b04ccf237a3f88a0f77dbfdca784f5d646b5b59e498c from "../../.cache/translations.i18n?=b357e65520993c7fdce6b04ccf237a3f88a0f77dbfdca784f5d646b5b59e498c";
 var foo = 1;
 if (foo) console.log(foo);
 __(__i18n_096c0a72c31f9a2d65126d8e8a401a2ab2f2e21d0a282a6ffe6642bbef65ffd9);
