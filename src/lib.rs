@@ -103,12 +103,14 @@ impl TransformVisitor {
 
 impl VisitMut for TransformVisitor {
     fn visit_mut_module_items(&mut self, module_items: &mut Vec<ModuleItem>) {
+        // Ignore this plugin for Jest runs
         if self.context.env_name == Environment::Test {
             return;
         }
 
         module_items.visit_mut_children_with(self);
 
+        // Insert imports for encountered translations at top of file
         module_items.splice(..0, self.imports());
     }
 
@@ -147,6 +149,7 @@ impl VisitMut for TransformVisitor {
                             expr: Box::new(argument),
                         };
 
+                        // Remember variable name to generate import later
                         self.import_variables.insert(variable_name);
                     } else {
                         panic!(
