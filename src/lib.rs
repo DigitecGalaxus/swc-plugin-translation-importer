@@ -1,10 +1,10 @@
 use std::collections::BTreeSet;
 use swc_plugin::{ast::*, plugin_transform, syntax_pos::DUMMY_SP};
 
-mod config;
 mod helpers;
+mod settings;
 
-pub use config::{Config, Environment};
+pub use settings::{Config, Context, Environment};
 
 // TODO
 // - check if the description for Environment::Production is still accurate,
@@ -13,19 +13,18 @@ pub use config::{Config, Environment};
 // - see if swc automatically outputs information about the span where an error
 //   occurred or if it makes sense to print it manually as is the case in the
 //   babel plugin.
-// - Take env from plugin context as per
-//   https://github.com/swc-project/swc/discussions/3540#discussioncomment-2227604
-//   https://github.com/swc-project/swc/pull/3677/files
 
 struct TransformVisitor {
     config: Config,
+    context: Context,
     import_variables: BTreeSet<String>,
 }
 
 impl TransformVisitor {
-    pub fn new(config: Config) -> Self {
+    pub fn new(config: Config, context: Context) -> Self {
         Self {
             config,
+            context,
             import_variables: BTreeSet::new(),
         }
     }
@@ -77,13 +76,13 @@ impl TransformVisitor {
 
 impl VisitMut for TransformVisitor {
     fn visit_mut_module_items(&mut self, module_items: &mut Vec<ModuleItem>) {
-        if self.config.environment == Environment::Test {
+        if self.context.env_name == Environment::Test {
             return;
         }
 
         module_items.visit_mut_children_with(self);
 
-        let imports = match self.config.environment {
+        let imports = match self.context.env_name {
             Environment::Development => vec![self.dev_imports()],
             _ => self.prod_imports(),
         };
@@ -107,7 +106,7 @@ impl VisitMut for TransformVisitor {
                             optional: false,
                         });
 
-                        let argument = match self.config.environment {
+                        let argument = match self.context.env_name {
                             // For development add fallback on the key for unknown translations
                             // __(__i18n_Hello || "Hello")
                             Environment::Development => Expr::Bin(BinExpr {
@@ -147,10 +146,11 @@ impl VisitMut for TransformVisitor {
 /// - `program` - The SWC [`Program`] to transform.
 /// - `config` - [`Config`] as JSON.
 #[plugin_transform]
-pub fn process_transform(program: Program, config: String, _context: String) -> Program {
+pub fn process_transform(program: Program, config: String, context: String) -> Program {
     let config: Config = serde_json::from_str(&config).expect("failed to parse plugin config");
+    let context: Context = serde_json::from_str(&context).expect("failed to parse plugin context");
 
-    program.fold_with(&mut as_folder(TransformVisitor::new(config)))
+    program.fold_with(&mut as_folder(TransformVisitor::new(config, context)))
 }
 
 #[cfg(test)]
@@ -163,15 +163,19 @@ if (foo) console.log(foo);
 __("Hello World!!");
 __("Hello World??");"#;
 
-    fn transform_visitor(config: Config) -> impl Fold {
-        as_folder(TransformVisitor::new(config))
+    fn transform_visitor(context: Context) -> impl Fold {
+        as_folder(TransformVisitor::new(
+            Config {
+                translation_cache: "../../.cache/translations.i18n".into(),
+            },
+            context,
+        ))
     }
 
     test!(
         swc_ecma_parser::Syntax::default(),
-        |_| transform_visitor(Config {
-            translation_cache: "../../.cache/translations.i18n".into(),
-            environment: Environment::Development,
+        |_| transform_visitor(Context {
+            env_name: Environment::Development,
         }),
         transpile_dev_mode,
         SOURCE,
@@ -184,9 +188,8 @@ __(__i18n_b357e65520993c7fdce6b04ccf237a3f88a0f77dbfdca784f5d646b5b59e498c || "H
 
     test!(
         swc_ecma_parser::Syntax::default(),
-        |_| transform_visitor(Config {
-            translation_cache: "../../.cache/translations.i18n".into(),
-            environment: Environment::Test,
+        |_| transform_visitor(Context {
+            env_name: Environment::Test,
         }),
         no_transpile_test_mode,
         SOURCE,
@@ -195,9 +198,8 @@ __(__i18n_b357e65520993c7fdce6b04ccf237a3f88a0f77dbfdca784f5d646b5b59e498c || "H
 
     test!(
         swc_ecma_parser::Syntax::default(),
-        |_| transform_visitor(Config {
-            translation_cache: "../../.cache/translations.i18n".into(),
-            environment: Environment::Production,
+        |_| transform_visitor(Context {
+            env_name: Environment::Production,
         }),
         transpile_prod_mode,
         SOURCE,
@@ -211,9 +213,8 @@ __(__i18n_b357e65520993c7fdce6b04ccf237a3f88a0f77dbfdca784f5d646b5b59e498c);"#
 
     test!(
         swc_ecma_parser::Syntax::default(),
-        |_| transform_visitor(Config {
-            translation_cache: "../../.cache/translations.i18n".into(),
-            environment: Environment::Production,
+        |_| transform_visitor(Context {
+            env_name: Environment::Production,
         }),
         nested_code,
         r#"const foo = bar(__("other_translation"));"#,

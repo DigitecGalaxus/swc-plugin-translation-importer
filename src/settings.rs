@@ -7,8 +7,14 @@ use serde::{Deserialize, Serialize};
 pub struct Config {
     /// Path to `translations.i18n` cache.
     pub translation_cache: String,
-    /// The target environment.
-    pub environment: Environment,
+}
+
+/// Additional context for the plugin.
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Context {
+    /// The target environment (from `NODE_ENV`).
+    pub env_name: Environment,
 }
 
 /// The target environment.
@@ -46,16 +52,12 @@ mod tests {
 
     #[test]
     fn enum_serialization() {
-        let config = Config {
-            translation_cache: "whatever".into(),
-            environment: Environment::Production,
+        let context = Context {
+            env_name: Environment::Production,
         };
 
-        let serialized = serde_json::to_string(&config).unwrap();
+        let serialized = serde_json::to_string(&context).unwrap();
 
-        assert_eq!(
-            r#"{"translationCache":"whatever","environment":"production"}"#,
-            &serialized
-        );
+        assert_eq!(r#"{"envName":"production"}"#, &serialized);
     }
 }
