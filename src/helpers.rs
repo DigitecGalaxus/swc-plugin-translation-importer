@@ -11,6 +11,11 @@ pub fn generate_variable_name(translation_key: &str) -> String {
     format!("{TRANSLATION_PREFIX}{hash:x}")
 }
 
+/// Strips the prefix from the variable name so only the hash remains.
+pub fn strip_prefix(variable_name: &str) -> &str {
+    &variable_name[TRANSLATION_PREFIX.len()..]
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

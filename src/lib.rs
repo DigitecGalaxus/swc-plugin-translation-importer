@@ -95,8 +95,12 @@ impl TransformVisitor {
                 ModuleItem::ModuleDecl(ModuleDecl::Import(ImportDecl {
                     span: DUMMY_SP,
                     specifiers: vec![import_specifier.clone()],
-                    src: format!("{}?={}", self.config.translation_cache, &variable_name[7..])
-                        .into(),
+                    src: format!(
+                        "{}?={}",
+                        self.config.translation_cache,
+                        helpers::strip_prefix(variable_name)
+                    )
+                    .into(),
                     type_only: false,
                     asserts: None,
                 }))
