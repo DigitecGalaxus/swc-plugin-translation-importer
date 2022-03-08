@@ -41,7 +41,22 @@ impl TransformVisitor {
     /// import { __i18n_096c0a72c31f9a2d65126d8e8a401a2ab2f2e21d0a282a6ffe6642bbef65ffd9, __i18n_b357e65520993c7fdce6b04ccf237a3f88a0f77dbfdca784f5d646b5b59e498c } from "../../.cache/translations.i18n?dev";
     /// ```
     fn dev_imports(&self) -> Vec<ModuleItem> {
-        let import_specifiers = self.import_specifiers();
+        let import_specifiers = self
+            .import_variables
+            .iter()
+            .map(|variable_name| {
+                ImportSpecifier::Named(ImportNamedSpecifier {
+                    span: DUMMY_SP,
+                    local: Ident {
+                        span: DUMMY_SP,
+                        sym: variable_name.clone().into(),
+                        optional: false,
+                    },
+                    imported: None,
+                    is_type_only: false,
+                })
+            })
+            .collect::<Vec<ImportSpecifier>>();
 
         if import_specifiers.is_empty() {
             vec![]
@@ -63,36 +78,28 @@ impl TransformVisitor {
     /// import __i18n_b357e65520993c7fdce6b04ccf237a3f88a0f77dbfdca784f5d646b5b59e498c from "../../.cache/translations.i18n?=b357e65520993c7fdce6b04ccf237a3f88a0f77dbfdca784f5d646b5b59e498c";
     /// ```
     fn prod_imports(&self) -> Vec<ModuleItem> {
-        self.import_specifiers()
-            .iter()
-            .zip(self.import_variables.iter())
-            .map(|(import_specifier, variable_name)| {
-                ModuleItem::ModuleDecl(ModuleDecl::Import(ImportDecl {
-                    span: DUMMY_SP,
-                    specifiers: vec![import_specifier.clone()],
-                    src: format!("{}?={}", self.config.translation_cache, variable_name).into(),
-                    type_only: false,
-                    asserts: None,
-                }))
-            })
-            .collect()
-    }
-
-    /// Returns all import specifiers based on the collected variable names.
-    fn import_specifiers(&self) -> Vec<ImportSpecifier> {
         self.import_variables
             .iter()
             .map(|variable_name| {
-                ImportSpecifier::Named(ImportNamedSpecifier {
+                ImportSpecifier::Default(ImportDefaultSpecifier {
                     span: DUMMY_SP,
                     local: Ident {
                         span: DUMMY_SP,
                         sym: variable_name.clone().into(),
                         optional: false,
                     },
-                    imported: None,
-                    is_type_only: false,
                 })
+            })
+            .zip(self.import_variables.iter())
+            .map(|(import_specifier, variable_name)| {
+                ModuleItem::ModuleDecl(ModuleDecl::Import(ImportDecl {
+                    span: DUMMY_SP,
+                    specifiers: vec![import_specifier.clone()],
+                    src: format!("{}?={}", self.config.translation_cache, &variable_name[7..])
+                        .into(),
+                    type_only: false,
+                    asserts: None,
+                }))
             })
             .collect()
     }
@@ -234,11 +241,11 @@ __(__i18n_b357e65520993c7fdce6b04ccf237a3f88a0f77dbfdca784f5d646b5b59e498c);"#
 
     test!(
         swc_ecma_parser::Syntax::default(),
-        |_| transform_visitor(Environment::Production),
+        |_| transform_visitor(Environment::Development),
         nested_code,
         r#"const foo = bar(__("other_translation"));"#,
-        r#"import { __i18n_c4622ceee64504cbc2c5b05ecb9e66c4235c6d03826437c16da0ce2e061479df } from "../../.cache/translations.i18n?=__i18n_c4622ceee64504cbc2c5b05ecb9e66c4235c6d03826437c16da0ce2e061479df";
-const foo = bar(__(__i18n_c4622ceee64504cbc2c5b05ecb9e66c4235c6d03826437c16da0ce2e061479df));"#
+        r#"import { __i18n_c4622ceee64504cbc2c5b05ecb9e66c4235c6d03826437c16da0ce2e061479df } from "../../.cache/translations.i18n?dev
+const foo = bar(__(__i18n_c4622ceee64504cbc2c5b05ecb9e66c4235c6d03826437c16da0ce2e061479df || "other_translation"));"#
     );
 
     test!(
