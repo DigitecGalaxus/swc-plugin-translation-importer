@@ -6,11 +6,6 @@ mod settings;
 
 pub use settings::{Config, Context, Environment};
 
-// TODO
-// - check if the description for Environment::Production is still accurate,
-//   namely whether it's still the case that webpack and terser are involved
-//   (webpack likely not).
-
 struct TransformVisitor {
     config: Config,
     context: Context,

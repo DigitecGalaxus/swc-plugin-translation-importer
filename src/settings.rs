@@ -33,8 +33,8 @@ pub enum Environment {
     /// Test mode is for running with Jest, where the plugin is ignored.
     Test,
     /// Production mode uses a separate import for every word. This will help
-    /// webpack and terser to move words only into those chunks where they are
-    /// needed.
+    /// webpack and the minifier to move words only into those chunks where
+    /// they are needed.
     ///
     /// ```javascript
     /// import __i18n_ItemNumber from "../translations.i18n?ItemNumber"
