@@ -1,0 +1,22 @@
+{
+  "name": "swc-plugin-i18n",
+  "version": "1.0.0-canary.0",
+  "description": "SWC plugin to handle translation keys",
+  "main": "swc_plugin_i18n.wasm",
+  "files": [
+    "swc_plugin_i18n.wasm"
+  ],
+  "scripts": {
+    "test": "cargo test",
+    "build": "cargo build --release --target wasm32-wasi && ncp target/wasm32-wasi/release/swc_plugin_i18n.wasm swc_plugin_i18n.wasm"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://dev.azure.com/digitecgalaxus/Playground/_git/swc-plugin-i18n"
+  },
+  "author": "Martin Disch <Martin.Disch@digitecgalaxus.ch>",
+  "license": "ISC",
+  "devDependencies": {
+    "ncp": "2.0.0"
+  }
+}
