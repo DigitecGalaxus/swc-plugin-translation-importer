@@ -15,7 +15,7 @@
     "url": "https://github.com/DigitecGalaxus/swc-plugin-constant-importer"
   },
   "author": "Martin Disch <Martin.Disch@digitecgalaxus.ch>",
-  "license": "ISC",
+  "license": "(MIT OR Apache-2.0)",
   "devDependencies": {
     "ncp": "2.0.0"
   }
