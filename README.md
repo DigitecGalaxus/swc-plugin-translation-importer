@@ -1,6 +1,6 @@
-# swc-plugin-i18n
+# swc-plugin-constant-importer
 
-This is the SWC version of `@tools/i18n-plugin`.
+A simple plugin that replaces translation key usages with imports from a file.
 
 ## Build
 

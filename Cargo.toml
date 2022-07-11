@@ -1,5 +1,5 @@
 [package]
-name = "swc-plugin-i18n"
+name = "swc-plugin-constant-importer"
 version = "0.1.0"
 edition = "2021"
 

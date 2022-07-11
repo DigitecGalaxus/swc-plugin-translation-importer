@@ -1,7 +1,7 @@
 {
-  "name": "swc-plugin-i18n",
+  "name": "swc-plugin-constant-importer",
   "version": "1.0.0-canary.0",
-  "description": "SWC plugin to handle translation keys",
+  "description": "Replaces translation key usages with imports from file",
   "main": "swc_plugin_i18n.wasm",
   "files": [
     "swc_plugin_i18n.wasm"
@@ -12,7 +12,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://dev.azure.com/digitecgalaxus/Playground/_git/swc-plugin-i18n"
+    "url": "https://github.com/DigitecGalaxus/swc-plugin-constant-importer"
   },
   "author": "Martin Disch <Martin.Disch@digitecgalaxus.ch>",
   "license": "ISC",
