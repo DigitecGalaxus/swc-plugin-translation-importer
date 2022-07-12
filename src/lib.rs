@@ -1,3 +1,5 @@
+#![allow(clippy::not_unsafe_ptr_arg_deref)]
+
 use std::collections::BTreeSet;
 use swc_plugin::{ast::*, plugin_transform, syntax_pos::DUMMY_SP};
 
