@@ -89,7 +89,7 @@ impl TransformVisitor {
             .map(|(import_specifier, variable_name)| {
                 ModuleItem::ModuleDecl(ModuleDecl::Import(ImportDecl {
                     span: DUMMY_SP,
-                    specifiers: vec![import_specifier.clone()],
+                    specifiers: vec![import_specifier],
                     src: format!(
                         "{}?={}",
                         self.config.translation_cache,
@@ -121,10 +121,9 @@ impl VisitMut for TransformVisitor {
         if let Callee::Expr(expr) = &mut call_expr.callee {
             if let Expr::Ident(id) = &mut **expr {
                 if &id.sym == "__" {
-                    let first_argument = call_expr.args.first_mut().expect(&format!(
+                    let first_argument = call_expr.args.first_mut().unwrap_or_else(|| panic!(
                         r#"Translation function requires an argument e.g. __("Hello World") in {}"#,
-                        self.context.filename
-                    ));
+                        self.context.filename));
 
                     if let Expr::Lit(Lit::Str(translation_key)) = &mut *first_argument.expr {
                         let variable_name = helpers::generate_variable_name(&translation_key.value);
