@@ -2,13 +2,13 @@
   "name": "swc-plugin-constant-importer",
   "version": "1.0.0-canary.0",
   "description": "Replaces translation key usages with imports from file",
-  "main": "swc_plugin_i18n.wasm",
+  "main": "swc_plugin_constant_importer.wasm",
   "files": [
-    "swc_plugin_i18n.wasm"
+    "swc_plugin_constant_importer.wasm"
   ],
   "scripts": {
     "test": "cargo test",
-    "build": "cargo build --release --target wasm32-wasi && ncp target/wasm32-wasi/release/swc_plugin_i18n.wasm swc_plugin_i18n.wasm"
+    "build": "cargo build --release --target wasm32-wasi && ncp target/wasm32-wasi/release/swc_plugin_constant_importer.wasm swc_plugin_constant_importer.wasm"
   },
   "repository": {
     "type": "git",
