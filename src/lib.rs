@@ -1,7 +1,7 @@
 #![allow(clippy::not_unsafe_ptr_arg_deref)]
 
 use std::collections::BTreeSet;
-use swc_plugin::{ast::*, plugin_transform, syntax_pos::DUMMY_SP};
+use swc_plugin::{ast::*, plugin_transform, syntax_pos::DUMMY_SP, TransformPluginProgramMetadata};
 
 mod helpers;
 mod settings;
@@ -177,9 +177,11 @@ impl VisitMut for TransformVisitor {
 /// - `program` - The SWC [`Program`] to transform.
 /// - `config` - [`Config`] as JSON.
 #[plugin_transform]
-pub fn process_transform(program: Program, config: String, context: String) -> Program {
-    let config: Config = serde_json::from_str(&config).expect("failed to parse plugin config");
-    let context: Context = serde_json::from_str(&context).expect("failed to parse plugin context");
+pub fn process_transform(program: Program, data: TransformPluginProgramMetadata) -> Program {
+    let config: Config =
+        serde_json::from_str(&data.plugin_config).expect("failed to parse plugin config");
+    let context: Context =
+        serde_json::from_str(&data.transform_context).expect("failed to parse plugin context");
 
     program.fold_with(&mut as_folder(TransformVisitor::new(config, context)))
 }
