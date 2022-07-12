@@ -21,7 +21,7 @@ jobs:
           command: check
 
   test:
-    name: Test Suite
+    name: Test suite
     runs-on: ubuntu-latest
     steps:
       - name: Checkout sources
