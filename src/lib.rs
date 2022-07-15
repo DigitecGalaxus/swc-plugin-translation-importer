@@ -177,11 +177,11 @@ impl VisitMut for TransformVisitor {
 /// - `program` - The SWC [`Program`] to transform.
 /// - `config` - [`Config`] as JSON.
 #[plugin_transform]
-pub fn process_transform(program: Program, data: TransformPluginProgramMetadata) -> Program {
+pub fn process_transform(program: Program, metadata: TransformPluginProgramMetadata) -> Program {
     let config: Config =
-        serde_json::from_str(&data.plugin_config).expect("failed to parse plugin config");
+        serde_json::from_str(&metadata.plugin_config).expect("failed to parse plugin config");
     let context: Context =
-        serde_json::from_str(&data.transform_context).expect("failed to parse plugin context");
+        serde_json::from_str(&metadata.transform_context).expect("failed to parse plugin context");
 
     program.fold_with(&mut as_folder(TransformVisitor::new(config, context)))
 }
