@@ -1,4 +1,4 @@
-# swc-plugin-constant-importer
+# swc-plugin-translation-importer
 
 A simple plugin that replaces translation key usages with imports from a file.
 
@@ -6,7 +6,7 @@ A simple plugin that replaces translation key usages with imports from a file.
 
 Get the [Rust toolchain](https://www.rust-lang.org/learn/get-started) and the
 right target with `rustup target add wasm32-wasi`. Then you're just a `npm run
-build` away and can find the result `swc_plugin_constant_importer.wasm`.
+build` away and can find the result `swc_plugin_translation_importer.wasm`.
 
 ## Release
 

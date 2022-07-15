@@ -1,5 +1,5 @@
 [package]
-name = "swc-plugin-constant-importer"
+name = "swc-plugin-translation-importer"
 version = "0.1.0"
 edition = "2021"
 

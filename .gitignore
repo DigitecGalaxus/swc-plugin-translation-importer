@@ -1,4 +1,4 @@
 /target
-swc_plugin_constant_importer.wasm
+swc_plugin_translation_importer.wasm
 package-lock.json
 node_modules/
