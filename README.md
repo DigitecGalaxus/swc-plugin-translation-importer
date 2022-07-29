@@ -26,7 +26,7 @@ module.exports = {
 If you use SWC standalone, you have to point it to the Wasm module by adding
 something like the following to `.swcrc`
 
-```javascript
+```json
 {
   "jsc": {
     "experimental": {
