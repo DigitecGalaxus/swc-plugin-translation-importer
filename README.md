@@ -52,9 +52,10 @@ build` away and can find the result `swc_plugin_translation_importer.wasm`.
 ## Release
 
 1. `npm install` if never done before
-2. Update version number in `package.json`
-3. `npm run build`
-4. `npm publish`
+2. Update version number in `Cargo.toml` and `package.json`
+3. On `main` (after merge) do `git tag vX.Y.Z` and `git push --tags`
+4. `npm run build`
+5. `npm publish`
 
 ## License
 
