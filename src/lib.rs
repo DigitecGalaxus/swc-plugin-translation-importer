@@ -207,10 +207,11 @@ pub fn process_transform(program: Program, metadata: TransformPluginProgramMetad
         filename: metadata
             .get_context(&TransformPluginMetadataContextKind::Filename)
             .expect("failed to get filename"),
-        env_name: serde_json::from_str::<Environment>(
-            &metadata
+        env_name: Environment::try_from(
+            metadata
                 .get_context(&TransformPluginMetadataContextKind::Env)
-                .expect("failed to get env"),
+                .expect("failed to get env")
+                .as_str(),
         )
         .expect("failed to parse environment"),
     };
