@@ -1,7 +1,17 @@
 #![allow(clippy::not_unsafe_ptr_arg_deref)]
 
 use std::collections::BTreeSet;
-use swc_plugin::{ast::*, plugin_transform, syntax_pos::DUMMY_SP, TransformPluginProgramMetadata};
+use swc_core::{
+    common::DUMMY_SP,
+    ecma::{
+        ast::*,
+        visit::{as_folder, FoldWith, VisitMut, VisitMutWith},
+    },
+    plugin::{
+        metadata::TransformPluginMetadataContextKind, plugin_transform,
+        proxies::TransformPluginProgramMetadata,
+    },
+};
 
 mod helpers;
 mod settings;
@@ -61,7 +71,11 @@ impl TransformVisitor {
             vec![ModuleItem::ModuleDecl(ModuleDecl::Import(ImportDecl {
                 span: DUMMY_SP,
                 specifiers: import_specifiers,
-                src: format!("{}?dev", self.config.translation_cache).into(),
+                src: Box::new(Str {
+                    span: DUMMY_SP,
+                    value: format!("{}?dev", self.config.translation_cache).into(),
+                    raw: None,
+                }),
                 type_only: false,
                 asserts: None,
             }))]
@@ -92,12 +106,16 @@ impl TransformVisitor {
                 ModuleItem::ModuleDecl(ModuleDecl::Import(ImportDecl {
                     span: DUMMY_SP,
                     specifiers: vec![import_specifier],
-                    src: format!(
-                        "{}?={}",
-                        self.config.translation_cache,
-                        helpers::strip_prefix(variable_name)
-                    )
-                    .into(),
+                    src: Box::new(Str {
+                        span: DUMMY_SP,
+                        value: format!(
+                            "{}?={}",
+                            self.config.translation_cache,
+                            helpers::strip_prefix(variable_name)
+                        )
+                        .into(),
+                        raw: None,
+                    }),
                     type_only: false,
                     asserts: None,
                 }))
@@ -178,10 +196,25 @@ impl VisitMut for TransformVisitor {
 /// - `config` - [`Config`] as JSON.
 #[plugin_transform]
 pub fn process_transform(program: Program, metadata: TransformPluginProgramMetadata) -> Program {
-    let config: Config =
-        serde_json::from_str(&metadata.plugin_config).expect("failed to parse plugin config");
-    let context: Context =
-        serde_json::from_str(&metadata.transform_context).expect("failed to parse plugin context");
+    let config: Config = serde_json::from_str(
+        &metadata
+            .get_transform_plugin_config()
+            .expect("failed to get plugin config for swc-plugin-translation-importer"),
+    )
+    .expect("failed to parse plugin config");
+
+    let context = Context {
+        filename: metadata
+            .get_context(&TransformPluginMetadataContextKind::Filename)
+            .expect("failed to get filename"),
+        env_name: Environment::try_from(
+            metadata
+                .get_context(&TransformPluginMetadataContextKind::Env)
+                .expect("failed to get env")
+                .as_str(),
+        )
+        .expect("failed to parse environment"),
+    };
 
     program.fold_with(&mut as_folder(TransformVisitor::new(config, context)))
 }
@@ -189,7 +222,10 @@ pub fn process_transform(program: Program, metadata: TransformPluginProgramMetad
 #[cfg(test)]
 mod tests {
     use super::*;
-    use swc_ecma_transforms_testing::test;
+    use swc_core::ecma::{
+        transforms::testing::test,
+        visit::{as_folder, Fold},
+    };
 
     const SOURCE: &str = r#"var foo = 1;
 if (foo) console.log(foo);
@@ -209,7 +245,7 @@ __("Hello World??");"#;
     }
 
     test!(
-        swc_ecma_parser::Syntax::default(),
+        Default::default(),
         |_| transform_visitor(Environment::Development),
         transpile_dev_mode,
         SOURCE,
@@ -221,7 +257,7 @@ __(__i18n_b357e65520993c7fdce6b04ccf237a3f88a0f77dbfdca784f5d646b5b59e498c || "H
     );
 
     test!(
-        swc_ecma_parser::Syntax::default(),
+        Default::default(),
         |_| transform_visitor(Environment::Test),
         no_transpile_test_mode,
         SOURCE,
@@ -229,7 +265,7 @@ __(__i18n_b357e65520993c7fdce6b04ccf237a3f88a0f77dbfdca784f5d646b5b59e498c || "H
     );
 
     test!(
-        swc_ecma_parser::Syntax::default(),
+        Default::default(),
         |_| transform_visitor(Environment::Production),
         transpile_prod_mode,
         SOURCE,
@@ -242,7 +278,7 @@ __(__i18n_b357e65520993c7fdce6b04ccf237a3f88a0f77dbfdca784f5d646b5b59e498c);"#
     );
 
     test!(
-        swc_ecma_parser::Syntax::default(),
+        Default::default(),
         |_| transform_visitor(Environment::Development),
         nested_code,
         r#"const foo = bar(__("other_translation"));"#,
@@ -251,7 +287,7 @@ const foo = bar(__(__i18n_c4622ceee64504cbc2c5b05ecb9e66c4235c6d03826437c16da0ce
     );
 
     test!(
-        swc_ecma_parser::Syntax::default(),
+        Default::default(),
         |_| transform_visitor(Environment::Development),
         no_usages,
         r#"const foo = "Hello, world!";"#,

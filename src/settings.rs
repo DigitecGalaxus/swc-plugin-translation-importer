@@ -10,8 +10,7 @@ pub struct Config {
 }
 
 /// Additional context for the plugin.
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[derive(Debug)]
 pub struct Context {
     /// The target environment (from `NODE_ENV`).
     pub env_name: Environment,
@@ -20,8 +19,7 @@ pub struct Context {
 }
 
 /// The target environment.
-#[derive(Debug, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[derive(Debug, PartialEq, Eq)]
 pub enum Environment {
     /// Development mode uses fallback for unknown words and an import for all
     /// words.
@@ -42,22 +40,15 @@ pub enum Environment {
     Production,
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+impl TryFrom<&str> for Environment {
+    type Error = String;
 
-    #[test]
-    fn enum_serialization() {
-        let context = Context {
-            env_name: Environment::Production,
-            filename: "irrelevant".into(),
-        };
-
-        let serialized = serde_json::to_string(&context).unwrap();
-
-        assert_eq!(
-            r#"{"envName":"production","filename":"irrelevant"}"#,
-            &serialized
-        );
+    fn try_from(value: &str) -> Result<Self, Self::Error> {
+        match value {
+            "development" => Ok(Self::Development),
+            "test" => Ok(Self::Test),
+            "production" => Ok(Self::Production),
+            _ => Err(format!("{value} is not a valid environment")),
+        }
     }
 }
