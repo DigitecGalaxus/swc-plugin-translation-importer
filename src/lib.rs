@@ -140,46 +140,49 @@ impl VisitMut for TransformVisitor {
     fn visit_mut_call_expr(&mut self, call_expr: &mut CallExpr) {
         if let Callee::Expr(expr) = &mut call_expr.callee {
             if let Expr::Ident(id) = &mut **expr {
-                if &id.sym == "__" {
-                    let first_argument = call_expr.args.first_mut().unwrap_or_else(|| panic!(
-                        r#"Translation function requires an argument e.g. __("Hello World") in {}"#,
-                        self.context.filename));
-
-                    if let Expr::Lit(Lit::Str(translation_key)) = &mut *first_argument.expr {
-                        let variable_name = helpers::generate_variable_name(&translation_key.value);
-                        let variable_identifier = Expr::Ident(Ident {
-                            span: DUMMY_SP,
-                            sym: variable_name.clone().into(),
-                            optional: false,
-                        });
-
-                        let argument = match self.context.env_name {
-                            // For development add fallback on the key for unknown translations
-                            // __(__i18n_Hello || "Hello")
-                            Environment::Development => Expr::Bin(BinExpr {
+                match id.sym.as_ref() {
+                   "__" | "__icu" | "__md" | "__byLanguage" | "__icuByLanguage" | "__mdByLanguage" => {
+                        let first_argument = call_expr.args.first_mut().unwrap_or_else(|| panic!(
+                            r#"Translation function requires an argument e.g. __("Hello World") in {}"#,
+                            self.context.filename));
+    
+                        if let Expr::Lit(Lit::Str(translation_key)) = &mut *first_argument.expr {
+                            let variable_name = helpers::generate_variable_name(&translation_key.value);
+                            let variable_identifier = Expr::Ident(Ident {
                                 span: DUMMY_SP,
-                                op: BinaryOp::LogicalOr,
-                                left: Box::new(variable_identifier),
-                                right: Box::new(Expr::Lit(Lit::Str(translation_key.clone()))),
-                            }),
-                            // For production it's just the variable name of the translation
-                            // __(__i18n_Hello)
-                            _ => variable_identifier,
-                        };
-
-                        call_expr.args[0] = ExprOrSpread {
-                            spread: None,
-                            expr: Box::new(argument),
-                        };
-
-                        // Remember variable name to generate import later
-                        self.import_variables.insert(variable_name);
-                    } else {
-                        panic!(
-                            r#"Translation function requires first argument to be a string e.g. __("Hello World") in {}"#,
-                            self.context.filename
-                        )
+                                sym: variable_name.clone().into(),
+                                optional: false,
+                            });
+    
+                            let argument = match self.context.env_name {
+                                // For development add fallback on the key for unknown translations
+                                // __(__i18n_Hello || "Hello")
+                                Environment::Development => Expr::Bin(BinExpr {
+                                    span: DUMMY_SP,
+                                    op: BinaryOp::LogicalOr,
+                                    left: Box::new(variable_identifier),
+                                    right: Box::new(Expr::Lit(Lit::Str(translation_key.clone()))),
+                                }),
+                                // For production it's just the variable name of the translation
+                                // __(__i18n_Hello)
+                                _ => variable_identifier,
+                            };
+    
+                            call_expr.args[0] = ExprOrSpread {
+                                spread: None,
+                                expr: Box::new(argument),
+                            };
+    
+                            // Remember variable name to generate import later
+                            self.import_variables.insert(variable_name);
+                        } else {
+                            panic!(
+                                r#"Translation function requires first argument to be a string e.g. __("Hello World") in {}"#,
+                                self.context.filename
+                            )
+                        }
                     }
+                    _ => {},
                 }
             }
         }
@@ -289,8 +292,54 @@ const foo = bar(__(__i18n_c4622ceee64504cbc2c5b05ecb9e66c4235c6d03826437c16da0ce
     test!(
         Default::default(),
         |_| transform_visitor(Environment::Development),
+        icu_code,
+        r#"const foo = __icu("other_translation");"#,
+        r#"import { __i18n_c4622ceee64504cbc2c5b05ecb9e66c4235c6d03826437c16da0ce2e061479df } from "../../.cache/translations.i18n?dev";
+const foo = __icu(__i18n_c4622ceee64504cbc2c5b05ecb9e66c4235c6d03826437c16da0ce2e061479df || "other_translation");"#
+    );
+
+    test!(
+        Default::default(),
+        |_| transform_visitor(Environment::Development),
+        markdown_code,
+        r#"const foo = __md("other_translation");"#,
+        r#"import { __i18n_c4622ceee64504cbc2c5b05ecb9e66c4235c6d03826437c16da0ce2e061479df } from "../../.cache/translations.i18n?dev";
+const foo = __md(__i18n_c4622ceee64504cbc2c5b05ecb9e66c4235c6d03826437c16da0ce2e061479df || "other_translation");"#
+    );
+
+    test!(
+        Default::default(),
+        |_| transform_visitor(Environment::Development),
+        by_language_code,
+        r#"const foo = __byLanguage("other_translation");"#,
+        r#"import { __i18n_c4622ceee64504cbc2c5b05ecb9e66c4235c6d03826437c16da0ce2e061479df } from "../../.cache/translations.i18n?dev";
+const foo = __byLanguage(__i18n_c4622ceee64504cbc2c5b05ecb9e66c4235c6d03826437c16da0ce2e061479df || "other_translation");"#
+    );
+
+    test!(
+        Default::default(),
+        |_| transform_visitor(Environment::Development),
+        icu_by_language,
+        r#"const foo = __icuByLanguage("other_translation");"#,
+        r#"import { __i18n_c4622ceee64504cbc2c5b05ecb9e66c4235c6d03826437c16da0ce2e061479df } from "../../.cache/translations.i18n?dev";
+const foo = __icuByLanguage(__i18n_c4622ceee64504cbc2c5b05ecb9e66c4235c6d03826437c16da0ce2e061479df || "other_translation");"#
+    );
+
+    test!(
+        Default::default(),
+        |_| transform_visitor(Environment::Development),
+        md_by_language,
+        r#"const foo = __mdByLanguage("other_translation");"#,
+        r#"import { __i18n_c4622ceee64504cbc2c5b05ecb9e66c4235c6d03826437c16da0ce2e061479df } from "../../.cache/translations.i18n?dev";
+const foo = __mdByLanguage(__i18n_c4622ceee64504cbc2c5b05ecb9e66c4235c6d03826437c16da0ce2e061479df || "other_translation");"#
+    );
+
+    test!(
+        Default::default(),
+        |_| transform_visitor(Environment::Development),
         no_usages,
         r#"const foo = "Hello, world!";"#,
         r#"const foo = "Hello, world!";"#
     );
+    
 }
