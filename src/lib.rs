@@ -141,19 +141,21 @@ impl VisitMut for TransformVisitor {
         if let Callee::Expr(expr) = &mut call_expr.callee {
             if let Expr::Ident(id) = &mut **expr {
                 match id.sym.as_ref() {
-                   "__" | "__icu" | "__md" | "__byLanguage" | "__icuByLanguage" | "__mdByLanguage" => {
+                    "__" | "__icu" | "__md" | "__byLanguage" | "__icuByLanguage"
+                    | "__mdByLanguage" => {
                         let first_argument = call_expr.args.first_mut().unwrap_or_else(|| panic!(
                             r#"Translation function requires an argument e.g. __("Hello World") in {}"#,
                             self.context.filename));
-    
+
                         if let Expr::Lit(Lit::Str(translation_key)) = &mut *first_argument.expr {
-                            let variable_name = helpers::generate_variable_name(&translation_key.value);
+                            let variable_name =
+                                helpers::generate_variable_name(&translation_key.value);
                             let variable_identifier = Expr::Ident(Ident {
                                 span: DUMMY_SP,
                                 sym: variable_name.clone().into(),
                                 optional: false,
                             });
-    
+
                             let argument = match self.context.env_name {
                                 // For development add fallback on the key for unknown translations
                                 // __(__i18n_Hello || "Hello")
@@ -167,12 +169,12 @@ impl VisitMut for TransformVisitor {
                                 // __(__i18n_Hello)
                                 _ => variable_identifier,
                             };
-    
+
                             call_expr.args[0] = ExprOrSpread {
                                 spread: None,
                                 expr: Box::new(argument),
                             };
-    
+
                             // Remember variable name to generate import later
                             self.import_variables.insert(variable_name);
                         } else {
@@ -182,7 +184,7 @@ impl VisitMut for TransformVisitor {
                             )
                         }
                     }
-                    _ => {},
+                    _ => {}
                 }
             }
         }
@@ -293,9 +295,11 @@ const foo = bar(__(__i18n_c4622ceee64504cbc2c5b05ecb9e66c4235c6d03826437c16da0ce
         Default::default(),
         |_| transform_visitor(Environment::Development),
         icu_code,
-        r#"const foo = __icu("other_translation");"#,
-        r#"import { __i18n_c4622ceee64504cbc2c5b05ecb9e66c4235c6d03826437c16da0ce2e061479df } from "../../.cache/translations.i18n?dev";
-const foo = __icu(__i18n_c4622ceee64504cbc2c5b05ecb9e66c4235c6d03826437c16da0ce2e061479df || "other_translation");"#
+        r#"const foo = __icu("Buy n pieces", { numberOfProducts: p.minAmount });"#,
+        r#"import { __i18n_d1b6589d9678069ddad863d441fe188e5362130e5be23215a5ff66458ef94441 } from "../../.cache/translations.i18n?dev";
+const foo = __icu(__i18n_d1b6589d9678069ddad863d441fe188e5362130e5be23215a5ff66458ef94441 || "Buy n pieces", {
+    numberOfProducts: p.minAmount
+});"#
     );
 
     test!(
@@ -341,5 +345,4 @@ const foo = __mdByLanguage(__i18n_c4622ceee64504cbc2c5b05ecb9e66c4235c6d03826437
         r#"const foo = "Hello, world!";"#,
         r#"const foo = "Hello, world!";"#
     );
-    
 }
