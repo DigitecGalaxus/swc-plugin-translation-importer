@@ -24,7 +24,6 @@ struct TransformVisitor {
     config: Config,
     context: Context,
     import_variables: BTreeSet<String>,
-    has_use_client: bool,
 }
 
 impl TransformVisitor {
@@ -33,7 +32,6 @@ impl TransformVisitor {
             config,
             context,
             import_variables: BTreeSet::new(),
-            has_use_client: false,
         }
     }
 
@@ -137,15 +135,12 @@ impl VisitMut for TransformVisitor {
 
         module_items.visit_mut_children_with(self);
 
-        let insert_index = match self.has_use_client {
+        // If there is a "use client", our import must come after because this directive must be the first expression
+        // https://github.com/DigitecGalaxus/swc-plugin-translation-importer/issues/13
+        let insert_index = get_use_client_index(module_items)
+            .map(|index| index + 1)
             // If there's no "use client", we can put it at the top of the file
-            false => 0,
-            // Otherwise it needs to go after "use client", because this directive must be the first expression
-            // https://github.com/DigitecGalaxus/swc-plugin-translation-importer/issues/13
-            true => get_use_client_index(module_items)
-                .map(|index| index + 1)
-                .unwrap_or(0),
-        };
+            .unwrap_or(0);
 
         // Insert imports for encountered translations where appropriate
         module_items.splice(insert_index..insert_index, self.imports());
@@ -204,12 +199,6 @@ impl VisitMut for TransformVisitor {
         }
 
         call_expr.visit_mut_children_with(self);
-    }
-
-    fn visit_mut_str(&mut self, string_literal: &mut Str) {
-        if &string_literal.value == USE_CLIENT_DIRECTIVE {
-            self.has_use_client = true;
-        }
     }
 }
 
