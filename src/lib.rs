@@ -18,8 +18,6 @@ mod settings;
 
 pub use settings::{Config, Context, Environment};
 
-const USE_CLIENT_DIRECTIVE: &str = "use client";
-
 struct TransformVisitor {
     config: Config,
     context: Context,
@@ -135,14 +133,16 @@ impl VisitMut for TransformVisitor {
 
         module_items.visit_mut_children_with(self);
 
-        // If there is a "use client", our import must come after because this directive must be the first expression
-        // https://github.com/DigitecGalaxus/swc-plugin-translation-importer/issues/13
-        let insert_index = get_use_client_index(module_items)
-            .map(|index| index + 1)
-            // If there's no "use client", we can put it at the top of the file
-            .unwrap_or(0);
+        let imports = self.imports();
+        // Abort early if there aren't any translations in the file
+        if imports.is_empty() {
+            return;
+        }
 
-        // Insert imports for encountered translations where appropriate
+        // We add our imports just before the first other import, which ensures that we'll come
+        // after any "use client" or similar directives that need to be first in the file.
+        // https://github.com/DigitecGalaxus/swc-plugin-translation-importer/issues/13
+        let insert_index = get_first_import_index(module_items).unwrap_or(0);
         module_items.splice(insert_index..insert_index, self.imports());
     }
 
@@ -202,19 +202,16 @@ impl VisitMut for TransformVisitor {
     }
 }
 
-/// Returns the index of the `"use client"` directive within the module items if it exists.
-fn get_use_client_index(module_items: &[ModuleItem]) -> Option<usize> {
+/// Returns the index of the first import within the module items if one exists.
+fn get_first_import_index(module_items: &[ModuleItem]) -> Option<usize> {
     module_items
         .iter()
-        .position(|module_item| is_use_client(module_item).unwrap_or(false))
+        .position(|module_item| is_import_decl(module_item).unwrap_or(false))
 }
 
-/// Checks whether a module item is the `"use client"` directive.
-fn is_use_client(module_item: &ModuleItem) -> Option<bool> {
-    match module_item.as_stmt()?.as_expr()?.expr.as_lit()? {
-        Lit::Str(lit) => Some(&lit.value == USE_CLIENT_DIRECTIVE),
-        _ => None,
-    }
+/// Checks whether a module item is an import declaration.
+fn is_import_decl(module_item: &ModuleItem) -> Option<bool> {
+    module_item.as_module_decl()?.as_import().map(|_| true)
 }
 
 /// Transforms a [`Program`].
@@ -376,13 +373,32 @@ __(__i18n_b357e65520993c7fdce6b04ccf237a3f88a0f77dbfdca784f5d646b5b59e498c);"#
     test!(
         Default::default(),
         |_| transform_visitor(Environment::Development),
-        appends_imports,
+        use_client,
         r#""use client";
-        import { unused } from "unused";
+        import { useTranslate } from "next-i18n";
+        const { __ } = useTranslate(lang);
         __("Hello World!!");"#,
         r#""use client";
         import { __i18n_096c0a72c31f9a2d65126d8e8a401a2ab2f2e21d0a282a6ffe6642bbef65ffd9 } from "../../.cache/translations.i18n?dev";
+        import { useTranslate } from "next-i18n";
+        const { __ } = useTranslate(lang);
+        __(__i18n_096c0a72c31f9a2d65126d8e8a401a2ab2f2e21d0a282a6ffe6642bbef65ffd9 || "Hello World!!");"#
+    );
+
+    test!(
+        Default::default(),
+        |_| transform_visitor(Environment::Development),
+        use_strict,
+        r#""use strict";
+        import { useTranslate } from "next-i18n";
         import { unused } from "unused";
+        const { __ } = useTranslate(lang);
+        __("Hello World!!");"#,
+        r#""use strict";
+        import { __i18n_096c0a72c31f9a2d65126d8e8a401a2ab2f2e21d0a282a6ffe6642bbef65ffd9 } from "../../.cache/translations.i18n?dev";
+        import { useTranslate } from "next-i18n";
+        import { unused } from "unused";
+        const { __ } = useTranslate(lang);
         __(__i18n_096c0a72c31f9a2d65126d8e8a401a2ab2f2e21d0a282a6ffe6642bbef65ffd9 || "Hello World!!");"#
     );
 }
