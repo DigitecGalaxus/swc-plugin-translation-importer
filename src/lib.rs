@@ -18,6 +18,8 @@ mod settings;
 
 pub use settings::{Config, Context, Environment};
 
+const USE_CLIENT_DIRECTIVE: &str = "use client";
+
 struct TransformVisitor {
     config: Config,
     context: Context,
@@ -133,8 +135,15 @@ impl VisitMut for TransformVisitor {
 
         module_items.visit_mut_children_with(self);
 
-        // Insert imports for encountered translations at top of file
-        module_items.splice(..0, self.imports());
+        // If there is a "use client", our import must come after because this directive must be the first expression
+        // https://github.com/DigitecGalaxus/swc-plugin-translation-importer/issues/13
+        let insert_index = get_use_client_index(module_items)
+            .map(|index| index + 1)
+            // If there's no "use client", we can put it at the top of the file
+            .unwrap_or(0);
+
+        // Insert imports for encountered translations where appropriate
+        module_items.splice(insert_index..insert_index, self.imports());
     }
 
     fn visit_mut_call_expr(&mut self, call_expr: &mut CallExpr) {
@@ -190,6 +199,21 @@ impl VisitMut for TransformVisitor {
         }
 
         call_expr.visit_mut_children_with(self);
+    }
+}
+
+/// Returns the index of the `"use client"` directive within the module items if it exists.
+fn get_use_client_index(module_items: &[ModuleItem]) -> Option<usize> {
+    module_items
+        .iter()
+        .position(|module_item| is_use_client(module_item).unwrap_or(false))
+}
+
+/// Checks whether a module item is the `"use client"` directive.
+fn is_use_client(module_item: &ModuleItem) -> Option<bool> {
+    match module_item.as_stmt()?.as_expr()?.expr.as_lit()? {
+        Lit::Str(lit) => Some(&lit.value == USE_CLIENT_DIRECTIVE),
+        _ => None,
     }
 }
 
@@ -347,5 +371,18 @@ __(__i18n_b357e65520993c7fdce6b04ccf237a3f88a0f77dbfdca784f5d646b5b59e498c);"#
         no_usages,
         r#"const foo = "Hello, world!";"#,
         r#"const foo = "Hello, world!";"#
+    );
+
+    test!(
+        Default::default(),
+        |_| transform_visitor(Environment::Development),
+        appends_imports,
+        r#""use client";
+        import { unused } from "unused";
+        __("Hello World!!");"#,
+        r#""use client";
+        import { __i18n_096c0a72c31f9a2d65126d8e8a401a2ab2f2e21d0a282a6ffe6642bbef65ffd9 } from "../../.cache/translations.i18n?dev";
+        import { unused } from "unused";
+        __(__i18n_096c0a72c31f9a2d65126d8e8a401a2ab2f2e21d0a282a6ffe6642bbef65ffd9 || "Hello World!!");"#
     );
 }
