@@ -18,8 +18,6 @@ mod settings;
 
 pub use settings::{Config, Context, Environment};
 
-const USE_CLIENT_DIRECTIVE: &str = "use client";
-
 struct TransformVisitor {
     config: Config,
     context: Context,
@@ -135,14 +133,16 @@ impl VisitMut for TransformVisitor {
 
         module_items.visit_mut_children_with(self);
 
-        // If there is a "use client", our import must come after because this directive must be the first expression
-        // https://github.com/DigitecGalaxus/swc-plugin-translation-importer/issues/13
-        let insert_index = get_use_client_index(module_items)
-            .map(|index| index + 1)
-            // If there's no "use client", we can put it at the top of the file
-            .unwrap_or(0);
+        let imports = self.imports();
+        // Abort early if there aren't any translations in the file
+        if imports.is_empty() {
+            return;
+        }
 
-        // Insert imports for encountered translations where appropriate
+        // We add our imports just before the first other import, which ensures that we'll come
+        // after any "use client" or similar directives that need to be first in the file.
+        // https://github.com/DigitecGalaxus/swc-plugin-translation-importer/issues/13
+        let insert_index = get_first_import_index(module_items).unwrap_or(0);
         module_items.splice(insert_index..insert_index, self.imports());
     }
 
@@ -202,18 +202,18 @@ impl VisitMut for TransformVisitor {
     }
 }
 
-/// Returns the index of the `"use client"` directive within the module items if it exists.
-fn get_use_client_index(module_items: &[ModuleItem]) -> Option<usize> {
+/// Returns the index of the first import within the module items if one exists.
+fn get_first_import_index(module_items: &[ModuleItem]) -> Option<usize> {
     module_items
         .iter()
-        .position(|module_item| is_use_client(module_item).unwrap_or(false))
+        .position(|module_item| is_import_decl(module_item).unwrap_or(false))
 }
 
-/// Checks whether a module item is the `"use client"` directive.
-fn is_use_client(module_item: &ModuleItem) -> Option<bool> {
-    match module_item.as_stmt()?.as_expr()?.expr.as_lit()? {
-        Lit::Str(lit) => Some(&lit.value == USE_CLIENT_DIRECTIVE),
-        _ => None,
+/// Checks whether a module item is an import declaration.
+fn is_import_decl(module_item: &ModuleItem) -> Option<bool> {
+    match module_item.as_module_decl()?.as_import() {
+        Some(_) => Some(true),
+        None => None,
     }
 }
 
