@@ -211,10 +211,7 @@ fn get_first_import_index(module_items: &[ModuleItem]) -> Option<usize> {
 
 /// Checks whether a module item is an import declaration.
 fn is_import_decl(module_item: &ModuleItem) -> Option<bool> {
-    match module_item.as_module_decl()?.as_import() {
-        Some(_) => Some(true),
-        None => None,
-    }
+    module_item.as_module_decl()?.as_import().map(|_| true)
 }
 
 /// Transforms a [`Program`].
