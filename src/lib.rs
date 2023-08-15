@@ -387,4 +387,21 @@ __(__i18n_b357e65520993c7fdce6b04ccf237a3f88a0f77dbfdca784f5d646b5b59e498c);"#
         const { __ } = useTranslate(lang);
         __(__i18n_096c0a72c31f9a2d65126d8e8a401a2ab2f2e21d0a282a6ffe6642bbef65ffd9 || "Hello World!!");"#
     );
+
+    test!(
+        Default::default(),
+        |_| transform_visitor(Environment::Development),
+        use_strict,
+        r#""use strict";
+        import { useTranslate } from "next-i18n";
+        import { unused } from "unused";
+        const { __ } = useTranslate(lang);
+        __("Hello World!!");"#,
+        r#""use strict";
+        import { __i18n_096c0a72c31f9a2d65126d8e8a401a2ab2f2e21d0a282a6ffe6642bbef65ffd9 } from "../../.cache/translations.i18n?dev";
+        import { useTranslate } from "next-i18n";
+        import { unused } from "unused";
+        const { __ } = useTranslate(lang);
+        __(__i18n_096c0a72c31f9a2d65126d8e8a401a2ab2f2e21d0a282a6ffe6642bbef65ffd9 || "Hello World!!");"#
+    );
 }
