@@ -2,3 +2,4 @@
 swc_plugin_translation_importer.wasm
 package-lock.json
 node_modules/
+*.tgz
