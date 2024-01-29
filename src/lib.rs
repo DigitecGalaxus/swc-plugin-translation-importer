@@ -77,7 +77,8 @@ impl TransformVisitor {
                     raw: None,
                 }),
                 type_only: false,
-                asserts: None,
+                with: None,
+                phase: ImportPhase::Evaluation,
             }))]
         }
     }
@@ -117,7 +118,8 @@ impl TransformVisitor {
                         raw: None,
                     }),
                     type_only: false,
-                    asserts: None,
+                    with: None,
+                    phase: ImportPhase::Evaluation,
                 }))
             })
             .collect()
