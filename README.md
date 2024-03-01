@@ -51,9 +51,13 @@ build` away and can find the result `swc_plugin_translation_importer.wasm`.
 
 ## Release
 
-1. `npm install` if never done before
-2. Update version number in `Cargo.toml` and `package.json`
-3. On `main` (after merge) do `git tag vX.Y.Z` and `git push --tags`
+On `main` (after merge) do
+
+1. `npm install` if never done before & install
+   [git-cliff](https://git-cliff.org/docs/installation/)
+2. Generate changelog with `git cliff --bump -o CHANGELOG.md` and update
+   version number in `Cargo.toml` and `package.json`
+3. `git tag vX.Y.Z` and `git push --follow-tags`
 4. `npm run build`
 5. `npm publish`
 
