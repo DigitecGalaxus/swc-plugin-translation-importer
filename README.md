@@ -57,7 +57,7 @@ On `main` (after merge) do
    [git-cliff](https://git-cliff.org/docs/installation/)
 2. Generate changelog with `git cliff --bump -o CHANGELOG.md` and update
    version number in `Cargo.toml` and `package.json`
-3. `git tag vX.Y.Z` and `git push --tags`
+3. `git tag vX.Y.Z` and `git push --follow-tags`
 4. `npm run build`
 5. `npm publish`
 
