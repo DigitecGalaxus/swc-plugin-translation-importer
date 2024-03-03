@@ -61,9 +61,8 @@ On the release PR do
 
 On `main` (after merge of the release PR) do
 
-1. `git tag vX.Y.Z` and `git push --follow-tags`
-2. `npm run build`
-3. `npm publish`
+1. `git tag vX.Y.Z` and `git push --tags`
+2. `npm publish`
 
 ## License
 
