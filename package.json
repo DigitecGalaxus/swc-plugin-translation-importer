@@ -13,7 +13,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/DigitecGalaxus/swc-plugin-translation-importer"
+    "url": "git+https://github.com/DigitecGalaxus/swc-plugin-translation-importer.git"
   },
   "author": "Digitec Galaxus AG",
   "license": "(MIT OR Apache-2.0)",
