@@ -51,11 +51,12 @@ build` away and can find the result `swc_plugin_translation_importer.wasm`.
 
 ## Release
 
+To get the necessary tools, run `npm install` if never done before & install
+[git-cliff](https://git-cliff.org/docs/installation/).
+
 On the release PR do
 
-1. `npm install` if never done before & install
-   [git-cliff](https://git-cliff.org/docs/installation/)
-2. Generate changelog with `git cliff --bump -o CHANGELOG.md` and update
+1. Generate changelog with `git cliff --bump -o CHANGELOG.md` and update
    version number in `Cargo.toml` and `package.json`
 
 On `main` (after merge of the release PR) do
