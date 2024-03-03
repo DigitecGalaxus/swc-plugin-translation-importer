@@ -12,6 +12,7 @@ All notable changes to this project will be documented in this file.
 
 - Generate changelogs (#18)
 - Document changelog generation (#21)
+- Update release guide (#23)
 
 ### Miscellaneous Tasks
 
