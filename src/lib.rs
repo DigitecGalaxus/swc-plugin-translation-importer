@@ -77,7 +77,8 @@ impl TransformVisitor {
                     raw: None,
                 }),
                 type_only: false,
-                asserts: None,
+                with: None,
+                phase: ImportPhase::Evaluation,
             }))]
         }
     }
@@ -117,7 +118,8 @@ impl TransformVisitor {
                         raw: None,
                     }),
                     type_only: false,
-                    asserts: None,
+                    with: None,
+                    phase: ImportPhase::Evaluation,
                 }))
             })
             .collect()
@@ -274,19 +276,13 @@ __("Hello World??");"#;
         Default::default(),
         |_| transform_visitor(Environment::Development),
         transpile_dev_mode,
-        SOURCE,
-        r#"import { __i18n_096c0a72c31f9a2d65126d8e8a401a2ab2f2e21d0a282a6ffe6642bbef65ffd9, __i18n_b357e65520993c7fdce6b04ccf237a3f88a0f77dbfdca784f5d646b5b59e498c } from "../../.cache/translations.i18n?dev";
-var foo = 1;
-if (foo) console.log(foo);
-__(__i18n_096c0a72c31f9a2d65126d8e8a401a2ab2f2e21d0a282a6ffe6642bbef65ffd9 || "Hello World!!");
-__(__i18n_b357e65520993c7fdce6b04ccf237a3f88a0f77dbfdca784f5d646b5b59e498c || "Hello World??");"#
+        SOURCE
     );
 
     test!(
         Default::default(),
         |_| transform_visitor(Environment::Test),
         no_transpile_test_mode,
-        SOURCE,
         SOURCE
     );
 
@@ -294,79 +290,55 @@ __(__i18n_b357e65520993c7fdce6b04ccf237a3f88a0f77dbfdca784f5d646b5b59e498c || "H
         Default::default(),
         |_| transform_visitor(Environment::Production),
         transpile_prod_mode,
-        SOURCE,
-        r#"import __i18n_096c0a72c31f9a2d65126d8e8a401a2ab2f2e21d0a282a6ffe6642bbef65ffd9 from "../../.cache/translations.i18n?=096c0a72c31f9a2d65126d8e8a401a2ab2f2e21d0a282a6ffe6642bbef65ffd9";
-import __i18n_b357e65520993c7fdce6b04ccf237a3f88a0f77dbfdca784f5d646b5b59e498c from "../../.cache/translations.i18n?=b357e65520993c7fdce6b04ccf237a3f88a0f77dbfdca784f5d646b5b59e498c";
-var foo = 1;
-if (foo) console.log(foo);
-__(__i18n_096c0a72c31f9a2d65126d8e8a401a2ab2f2e21d0a282a6ffe6642bbef65ffd9);
-__(__i18n_b357e65520993c7fdce6b04ccf237a3f88a0f77dbfdca784f5d646b5b59e498c);"#
+        SOURCE
     );
 
     test!(
         Default::default(),
         |_| transform_visitor(Environment::Development),
         nested_code,
-        r#"const foo = bar(__("other_translation"));"#,
-        r#"import { __i18n_c4622ceee64504cbc2c5b05ecb9e66c4235c6d03826437c16da0ce2e061479df } from "../../.cache/translations.i18n?dev";
-        const foo = bar(__(__i18n_c4622ceee64504cbc2c5b05ecb9e66c4235c6d03826437c16da0ce2e061479df || "other_translation"));"#
+        r#"const foo = bar(__("other_translation"));"#
     );
 
     test!(
         Default::default(),
         |_| transform_visitor(Environment::Development),
         icu_code,
-        r#"const foo = __icu("Buy n pieces", { numberOfProducts: p.minAmount });"#,
-        r#"import { __i18n_d1b6589d9678069ddad863d441fe188e5362130e5be23215a5ff66458ef94441 } from "../../.cache/translations.i18n?dev";
-        const foo = __icu(__i18n_d1b6589d9678069ddad863d441fe188e5362130e5be23215a5ff66458ef94441 || "Buy n pieces", {
-            numberOfProducts: p.minAmount
-        });"#
+        r#"const foo = __icu("Buy n pieces", { numberOfProducts: p.minAmount });"#
     );
 
     test!(
         Default::default(),
         |_| transform_visitor(Environment::Development),
         markdown_code,
-        r#"const foo = __md("other_translation");"#,
-        r#"import { __i18n_c4622ceee64504cbc2c5b05ecb9e66c4235c6d03826437c16da0ce2e061479df } from "../../.cache/translations.i18n?dev";
-        const foo = __md(__i18n_c4622ceee64504cbc2c5b05ecb9e66c4235c6d03826437c16da0ce2e061479df || "other_translation");"#
+        r#"const foo = __md("other_translation");"#
     );
 
     test!(
         Default::default(),
         |_| transform_visitor(Environment::Development),
         by_language_code,
-        r#"const foo = __byLanguage("other_translation");"#,
-        r#"import { __i18n_c4622ceee64504cbc2c5b05ecb9e66c4235c6d03826437c16da0ce2e061479df } from "../../.cache/translations.i18n?dev";
-        const foo = __byLanguage(__i18n_c4622ceee64504cbc2c5b05ecb9e66c4235c6d03826437c16da0ce2e061479df || "other_translation");"#
+        r#"const foo = __byLanguage("other_translation");"#
     );
 
     test!(
         Default::default(),
         |_| transform_visitor(Environment::Development),
         icu_by_language,
-        r#"const foo = __icuByLanguage("Pluralized items ordered", language, { category, stockCount });"#,
-        r#"import { __i18n_5dec8611ff95ef5ade67844d5a0b16a7c2020762363f0231d8bf4ba7aeca7474 } from "../../.cache/translations.i18n?dev";
-        const foo = __icuByLanguage(__i18n_5dec8611ff95ef5ade67844d5a0b16a7c2020762363f0231d8bf4ba7aeca7474 || "Pluralized items ordered", language, {
-            category,
-            stockCount
-        });"#
+        r#"const foo = __icuByLanguage("Pluralized items ordered", language, { category, stockCount });"#
     );
 
     test!(
         Default::default(),
         |_| transform_visitor(Environment::Development),
         md_by_language,
-        r#"const foo = __mdByLanguage("other_translation");"#,
-        r#"import { __i18n_c4622ceee64504cbc2c5b05ecb9e66c4235c6d03826437c16da0ce2e061479df } from "../../.cache/translations.i18n?dev";
-        const foo = __mdByLanguage(__i18n_c4622ceee64504cbc2c5b05ecb9e66c4235c6d03826437c16da0ce2e061479df || "other_translation");"#
+        r#"const foo = __mdByLanguage("other_translation");"#
     );
 
     test!(
         Default::default(),
         |_| transform_visitor(Environment::Development),
         no_usages,
-        r#"const foo = "Hello, world!";"#,
         r#"const foo = "Hello, world!";"#
     );
 
@@ -377,12 +349,7 @@ __(__i18n_b357e65520993c7fdce6b04ccf237a3f88a0f77dbfdca784f5d646b5b59e498c);"#
         r#""use client";
         import { useTranslate } from "next-i18n";
         const { __ } = useTranslate(lang);
-        __("Hello World!!");"#,
-        r#""use client";
-        import { __i18n_096c0a72c31f9a2d65126d8e8a401a2ab2f2e21d0a282a6ffe6642bbef65ffd9 } from "../../.cache/translations.i18n?dev";
-        import { useTranslate } from "next-i18n";
-        const { __ } = useTranslate(lang);
-        __(__i18n_096c0a72c31f9a2d65126d8e8a401a2ab2f2e21d0a282a6ffe6642bbef65ffd9 || "Hello World!!");"#
+        __("Hello World!!");"#
     );
 
     test!(
@@ -393,12 +360,6 @@ __(__i18n_b357e65520993c7fdce6b04ccf237a3f88a0f77dbfdca784f5d646b5b59e498c);"#
         import { useTranslate } from "next-i18n";
         import { unused } from "unused";
         const { __ } = useTranslate(lang);
-        __("Hello World!!");"#,
-        r#""use strict";
-        import { __i18n_096c0a72c31f9a2d65126d8e8a401a2ab2f2e21d0a282a6ffe6642bbef65ffd9 } from "../../.cache/translations.i18n?dev";
-        import { useTranslate } from "next-i18n";
-        import { unused } from "unused";
-        const { __ } = useTranslate(lang);
-        __(__i18n_096c0a72c31f9a2d65126d8e8a401a2ab2f2e21d0a282a6ffe6642bbef65ffd9 || "Hello World!!");"#
+        __("Hello World!!");"#
     );
 }
