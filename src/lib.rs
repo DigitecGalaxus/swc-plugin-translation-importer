@@ -5,7 +5,7 @@ use swc_core::{
     common::DUMMY_SP,
     ecma::{
         ast::*,
-        visit::{as_folder, FoldWith, VisitMut, VisitMutWith},
+        visit::{visit_mut_pass, VisitMut, VisitMutWith},
     },
     plugin::{
         metadata::TransformPluginMetadataContextKind, plugin_transform,
@@ -55,6 +55,7 @@ impl TransformVisitor {
                 ImportSpecifier::Named(ImportNamedSpecifier {
                     span: DUMMY_SP,
                     local: Ident {
+                        ctxt: Default::default(),
                         span: DUMMY_SP,
                         sym: variable_name.clone().into(),
                         optional: false,
@@ -96,6 +97,7 @@ impl TransformVisitor {
                 ImportSpecifier::Default(ImportDefaultSpecifier {
                     span: DUMMY_SP,
                     local: Ident {
+                        ctxt: Default::default(),
                         span: DUMMY_SP,
                         sym: variable_name.clone().into(),
                         optional: false,
@@ -162,6 +164,7 @@ impl VisitMut for TransformVisitor {
                             let variable_name =
                                 helpers::generate_variable_name(&translation_key.value);
                             let variable_identifier = Expr::Ident(Ident {
+                                ctxt: Default::default(),
                                 span: DUMMY_SP,
                                 sym: variable_name.clone().into(),
                                 optional: false,
@@ -244,7 +247,9 @@ pub fn process_transform(program: Program, metadata: TransformPluginProgramMetad
         .expect("failed to parse environment"),
     };
 
-    program.fold_with(&mut as_folder(TransformVisitor::new(config, context)))
+    program.apply(visit_mut_pass(
+        &mut (TransformVisitor::new(config, context)),
+    ))
 }
 
 #[cfg(test)]
@@ -252,7 +257,7 @@ mod tests {
     use super::*;
     use swc_core::ecma::{
         transforms::testing::test,
-        visit::{as_folder, Fold},
+        visit::{visit_mut_pass, VisitMutPass},
     };
 
     const SOURCE: &str = r#"var foo = 1;
@@ -260,8 +265,8 @@ if (foo) console.log(foo);
 __("Hello World!!");
 __("Hello World??");"#;
 
-    fn transform_visitor(environment: Environment) -> impl Fold {
-        as_folder(TransformVisitor::new(
+    fn transform_visitor(environment: Environment) -> VisitMutPass<TransformVisitor> {
+        visit_mut_pass(TransformVisitor::new(
             Config {
                 translation_cache: "../../.cache/translations.i18n".into(),
             },
@@ -273,6 +278,7 @@ __("Hello World??");"#;
     }
 
     test!(
+        module,
         Default::default(),
         |_| transform_visitor(Environment::Development),
         transpile_dev_mode,
@@ -280,6 +286,7 @@ __("Hello World??");"#;
     );
 
     test!(
+        module,
         Default::default(),
         |_| transform_visitor(Environment::Test),
         no_transpile_test_mode,
@@ -287,6 +294,7 @@ __("Hello World??");"#;
     );
 
     test!(
+        module,
         Default::default(),
         |_| transform_visitor(Environment::Production),
         transpile_prod_mode,
@@ -294,6 +302,7 @@ __("Hello World??");"#;
     );
 
     test!(
+        module,
         Default::default(),
         |_| transform_visitor(Environment::Development),
         nested_code,
@@ -301,6 +310,7 @@ __("Hello World??");"#;
     );
 
     test!(
+        module,
         Default::default(),
         |_| transform_visitor(Environment::Development),
         icu_code,
@@ -308,6 +318,7 @@ __("Hello World??");"#;
     );
 
     test!(
+        module,
         Default::default(),
         |_| transform_visitor(Environment::Development),
         markdown_code,
@@ -315,6 +326,7 @@ __("Hello World??");"#;
     );
 
     test!(
+        module,
         Default::default(),
         |_| transform_visitor(Environment::Development),
         by_language_code,
@@ -322,6 +334,7 @@ __("Hello World??");"#;
     );
 
     test!(
+        module,
         Default::default(),
         |_| transform_visitor(Environment::Development),
         icu_by_language,
@@ -329,6 +342,7 @@ __("Hello World??");"#;
     );
 
     test!(
+        module,
         Default::default(),
         |_| transform_visitor(Environment::Development),
         md_by_language,
@@ -336,6 +350,7 @@ __("Hello World??");"#;
     );
 
     test!(
+        module,
         Default::default(),
         |_| transform_visitor(Environment::Development),
         no_usages,
@@ -343,6 +358,7 @@ __("Hello World??");"#;
     );
 
     test!(
+        module,
         Default::default(),
         |_| transform_visitor(Environment::Development),
         use_client,
@@ -353,6 +369,7 @@ __("Hello World??");"#;
     );
 
     test!(
+        module,
         Default::default(),
         |_| transform_visitor(Environment::Development),
         use_strict,
