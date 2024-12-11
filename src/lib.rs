@@ -278,6 +278,7 @@ __("Hello World??");"#;
     }
 
     test!(
+        module,
         Default::default(),
         |_| transform_visitor(Environment::Development),
         transpile_dev_mode,
@@ -285,6 +286,7 @@ __("Hello World??");"#;
     );
 
     test!(
+        module,
         Default::default(),
         |_| transform_visitor(Environment::Test),
         no_transpile_test_mode,
@@ -292,6 +294,7 @@ __("Hello World??");"#;
     );
 
     test!(
+        module,
         Default::default(),
         |_| transform_visitor(Environment::Production),
         transpile_prod_mode,
@@ -299,6 +302,7 @@ __("Hello World??");"#;
     );
 
     test!(
+        module,
         Default::default(),
         |_| transform_visitor(Environment::Development),
         nested_code,
@@ -306,6 +310,7 @@ __("Hello World??");"#;
     );
 
     test!(
+        module,
         Default::default(),
         |_| transform_visitor(Environment::Development),
         icu_code,
@@ -313,6 +318,7 @@ __("Hello World??");"#;
     );
 
     test!(
+        module,
         Default::default(),
         |_| transform_visitor(Environment::Development),
         markdown_code,
@@ -320,6 +326,7 @@ __("Hello World??");"#;
     );
 
     test!(
+        module,
         Default::default(),
         |_| transform_visitor(Environment::Development),
         by_language_code,
@@ -327,6 +334,7 @@ __("Hello World??");"#;
     );
 
     test!(
+        module,
         Default::default(),
         |_| transform_visitor(Environment::Development),
         icu_by_language,
@@ -334,6 +342,7 @@ __("Hello World??");"#;
     );
 
     test!(
+        module,
         Default::default(),
         |_| transform_visitor(Environment::Development),
         md_by_language,
@@ -341,6 +350,7 @@ __("Hello World??");"#;
     );
 
     test!(
+        module,
         Default::default(),
         |_| transform_visitor(Environment::Development),
         no_usages,
@@ -348,6 +358,7 @@ __("Hello World??");"#;
     );
 
     test!(
+        module,
         Default::default(),
         |_| transform_visitor(Environment::Development),
         use_client,
@@ -358,6 +369,7 @@ __("Hello World??");"#;
     );
 
     test!(
+        module,
         Default::default(),
         |_| transform_visitor(Environment::Development),
         use_strict,
