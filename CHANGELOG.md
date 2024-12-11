@@ -2,7 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
-## [unreleased]
+## [2.0.0] - 2024-12-11
+
+### Features
+
+- [**breaking**] Add support for Next.js 15.0.4 (#28) ([214f945](https://github.com/DigitecGalaxus/swc-plugin-translation-importer/commit/214f945505df74b00f409f5dbfa46040c4713d34))
 
 ### Documentation
 
