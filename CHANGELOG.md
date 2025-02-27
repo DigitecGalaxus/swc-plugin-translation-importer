@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.0.0] 2025-02-27
+
+- [**breaking**] Add support for Next.js 15.2.0. Update to swc_core 14.0.1 (compatible with @swc/core@1.10.18)
+
 ## [2.0.0] - 2024-12-11
 
 ### Features

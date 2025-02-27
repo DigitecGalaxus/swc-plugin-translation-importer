@@ -46,7 +46,7 @@ something like the following to `.swcrc`
 ## Build
 
 Get the [Rust toolchain](https://www.rust-lang.org/learn/get-started) and the
-right target with `rustup target add wasm32-wasi`. Then you're just a `npm run
+right target with `rustup target add wasm32-wasip1`. Then you're just a `npm run
 build` away and can find the result `swc_plugin_translation_importer.wasm`.
 
 ## Release
