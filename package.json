@@ -1,6 +1,6 @@
 {
   "name": "@galaxus/swc-plugin-translation-importer",
-  "version": "4.0.0",
+  "version": "5.0.0",
   "description": "Replaces translation key usages with imports from file",
   "main": "./swc_plugin_translation_importer.wasm",
   "files": [
