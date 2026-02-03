@@ -161,8 +161,12 @@ impl VisitMut for TransformVisitor {
                             self.context.filename));
 
                         if let Expr::Lit(Lit::Str(translation_key)) = &mut *first_argument.expr {
-                            let variable_name =
-                                helpers::generate_variable_name(translation_key.value.as_str().expect("translation key must be valid UTF-8"));
+                            let variable_name = helpers::generate_variable_name(
+                                translation_key
+                                    .value
+                                    .as_str()
+                                    .expect("translation key must be valid UTF-8"),
+                            );
                             let variable_identifier = Expr::Ident(Ident {
                                 ctxt: Default::default(),
                                 span: DUMMY_SP,
