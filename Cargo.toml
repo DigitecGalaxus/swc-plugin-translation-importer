@@ -17,5 +17,8 @@ opt-level = "z"
 [dependencies]
 serde = "1.0.173"
 serde_json = "1.0.103"
-swc_core = { version = "45.0.2", features = ["ecma_plugin_transform"] }
+swc_core = { version = "50.2.3", features = ["ecma_plugin_transform"] }
 sha2 = "0.10.7"
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(swc_ast_unknown)'] }

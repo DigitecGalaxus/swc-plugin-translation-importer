@@ -153,7 +153,7 @@ impl VisitMut for TransformVisitor {
     fn visit_mut_call_expr(&mut self, call_expr: &mut CallExpr) {
         if let Callee::Expr(expr) = &mut call_expr.callee {
             if let Expr::Ident(id) = &mut **expr {
-                match id.sym.as_ref() {
+                match id.sym.as_str() {
                     "__" | "__icu" | "__md" | "__byLanguage" | "__icuByLanguage"
                     | "__mdByLanguage" => {
                         let first_argument = call_expr.args.first_mut().unwrap_or_else(|| panic!(
@@ -161,8 +161,12 @@ impl VisitMut for TransformVisitor {
                             self.context.filename));
 
                         if let Expr::Lit(Lit::Str(translation_key)) = &mut *first_argument.expr {
-                            let variable_name =
-                                helpers::generate_variable_name(&translation_key.value);
+                            let variable_name = helpers::generate_variable_name(
+                                translation_key
+                                    .value
+                                    .as_str()
+                                    .expect("translation key must be valid UTF-8"),
+                            );
                             let variable_identifier = Expr::Ident(Ident {
                                 ctxt: Default::default(),
                                 span: DUMMY_SP,
