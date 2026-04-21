@@ -430,6 +430,21 @@ __("Hello World??");"#;
         };"#
     );
 
+    test!(
+        module,
+        Default::default(),
+        |_| transform_visitor(Environment::Production),
+        translator_object_wrapper_prod,
+        r#"export const buildTranslatorByLanguage = (language) => ({
+            __: (key, ...interpolations) => __byLanguage(key, language, ...interpolations),
+            __icu: (key, icuMessageData) => __icuByLanguage(key, language, icuMessageData),
+        });
+        const greeting = (lang) => {
+            const { __ } = buildTranslatorByLanguage(lang);
+            return __("Hello [0]!", "World");
+        };"#
+    );
+
     // Mixing translator wrapper props with anything else in the same object
     // literal is rejected. This catches cases where a wrapper accidentally
     // gained an extra property — failing loudly is safer than partial work.
