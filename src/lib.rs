@@ -150,6 +150,44 @@ impl VisitMut for TransformVisitor {
         module_items.splice(insert_index..insert_index, self.imports());
     }
 
+    /// Object literals whose only (non-computed, non-spread) properties are
+    /// named `__`, `__icu`, or `__md` are treated as translator objects:
+    /// recursion is skipped so forwarding calls like
+    /// `__byLanguage(key, lang, ...)` inside them don't trip the
+    /// "first argument must be a string literal" check.
+    ///
+    /// Mixing translation property names with anything else in the same
+    /// object literal is rejected — it's almost always a mistake, and
+    /// silently skipping or partially transforming such an object is worse
+    /// than a loud failure.
+    fn visit_mut_object_lit(&mut self, obj: &mut ObjectLit) {
+        let mut has_translation_helper_properties = false;
+        for prop in &obj.props {
+            let matched = match prop {
+                PropOrSpread::Prop(prop) => match &**prop {
+                    Prop::KeyValue(kv) => is_translation_property(&kv.key),
+                    Prop::Method(m) => is_translation_property(&m.key),
+                    _ => false,
+                },
+                PropOrSpread::Spread(_) => false,
+            };
+            if matched {
+                has_translation_helper_properties = true;
+            } else if has_translation_helper_properties {
+                // If we already have translation helper properties, then any non-matching property is a problem
+                panic!(
+                    r#"Object literal mixes translation properties (__, __icu, __md) with other properties in {}; keep the translator object pure"#,
+                    self.context.filename
+                );
+            }
+        }
+        // If this object has translation helper properties, we assume it's a translator wrapper and allow
+        // calls like __byLanguage to be nested inside it without panicking
+        if !has_translation_helper_properties {
+            obj.visit_mut_children_with(self);
+        }
+    }
+
     fn visit_mut_call_expr(&mut self, call_expr: &mut CallExpr) {
         if let Callee::Expr(expr) = &mut call_expr.callee {
             if let Expr::Ident(id) = &mut **expr {
@@ -209,6 +247,19 @@ impl VisitMut for TransformVisitor {
 
         call_expr.visit_mut_children_with(self);
     }
+}
+
+/// Checks whether a property name is one of the translation helper properties (`__`, `__icu`, or `__md`).
+fn is_translation_property(key: &PropName) -> bool {
+    match key {
+        PropName::Ident(ident) => is_translation_name(ident.sym.as_str()),
+        PropName::Str(s) => s.value.as_str().is_some_and(is_translation_name),
+        _ => false,
+    }
+}
+
+fn is_translation_name(name: &str) -> bool {
+    matches!(name, "__" | "__icu" | "__md")
 }
 
 /// Returns the index of the first import within the module items if one exists.
@@ -360,6 +411,84 @@ __("Hello World??");"#;
         no_usages,
         r#"const foo = "Hello, world!";"#
     );
+
+    // Forwarding wrapper: object literal with only translation-named props is
+    // skipped entirely, so the non-literal first argument of `__byLanguage`
+    // does not cause a panic.
+    test!(
+        module,
+        Default::default(),
+        |_| transform_visitor(Environment::Development),
+        translator_object_wrapper,
+        r#"export const buildTranslatorByLanguage = (language) => ({
+            __: (key, ...interpolations) => __byLanguage(key, language, ...interpolations),
+            __icu: (key, icuMessageData) => __icuByLanguage(key, language, icuMessageData),
+        });
+        const greeting = (lang) => {
+            const { __ } = buildTranslatorByLanguage(lang);
+            return __("Hello [0]!", "World");
+        };"#
+    );
+
+    // Mixing translator wrapper props with anything else in the same object
+    // literal is rejected. This catches cases where a wrapper accidentally
+    // gained an extra property — failing loudly is safer than partial work.
+    #[test]
+    #[should_panic(expected = "mixes translation properties")]
+    fn mixed_object_panics() {
+        fn ident_key(name: &str) -> PropName {
+            PropName::Ident(IdentName {
+                span: DUMMY_SP,
+                sym: name.into(),
+            })
+        }
+        fn prop(key: &str, value: Expr) -> PropOrSpread {
+            PropOrSpread::Prop(Box::new(Prop::KeyValue(KeyValueProp {
+                key: ident_key(key),
+                value: Box::new(value),
+            })))
+        }
+
+        let mut obj = ObjectLit {
+            span: DUMMY_SP,
+            props: vec![
+                prop(
+                    "__",
+                    Expr::Arrow(ArrowExpr {
+                        span: DUMMY_SP,
+                        ctxt: Default::default(),
+                        params: vec![],
+                        body: Box::new(BlockStmtOrExpr::Expr(Box::new(Expr::Lit(Lit::Null(
+                            Null { span: DUMMY_SP },
+                        ))))),
+                        is_async: false,
+                        is_generator: false,
+                        type_params: None,
+                        return_type: None,
+                    }),
+                ),
+                prop(
+                    "foo",
+                    Expr::Lit(Lit::Num(Number {
+                        span: DUMMY_SP,
+                        value: 42.0,
+                        raw: None,
+                    })),
+                ),
+            ],
+        };
+
+        let mut visitor = TransformVisitor::new(
+            Config {
+                translation_cache: "../../.cache/translations.i18n".into(),
+            },
+            Context {
+                env_name: Environment::Development,
+                filename: "mixed.js".into(),
+            },
+        );
+        visitor.visit_mut_object_lit(&mut obj);
+    }
 
     test!(
         module,
