@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [7.0.0] 2026-10-20
+
+- [**breaking**] Add support for Next.js 16.4. Update to swc_core 79.0.0 (compatible with @swc/core@1.16) (#37)
+
+## [6.0.0] 2026-02-03
+
+- [**breaking**] Add support for Next.js 16.1.x. Update to swc_core 50.2.3 and build with `swc_ast_unknown` for forward compatibility with newer SWC hosts (#35)
+
 ## [5.0.0] 2025-11-04
 
 - [**breaking**] Add support for Next.js 16.0.1 Update to swc_core 45.0.2 (compatible with @swc/core@1.13.21)
