@@ -1,0 +1,4 @@
+# Builds the wasm plugin with the forward-compatible AST, so new SWC hosts can
+# still pass unknown AST nodes to it.
+[target.wasm32-wasip1]
+rustflags = ["--cfg=swc_ast_unknown"]
