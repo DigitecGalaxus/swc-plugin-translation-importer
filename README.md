@@ -51,18 +51,15 @@ build` away and can find the result `swc_plugin_translation_importer.wasm`.
 
 ## Release
 
-To get the necessary tools, run `npm install` if never done before & install
-[git-cliff](https://git-cliff.org/docs/installation/).
+Releases use [changesets](https://github.com/changesets/changesets) and the
+`Release` GitHub Actions workflow.
 
-On the release PR do
-
-1. Generate changelog with `git cliff --bump -o CHANGELOG.md` and update
-   version number in `Cargo.toml` and `package.json`
-
-On `main` (after merge of the release PR) do
-
-1. `git tag vX.Y.Z` and `git push --tags`
-2. `npm publish`
+1. In the PR with your change, run `pnpm changeset`, pick patch, minor or major
+   and describe the change. Commit the new file in `.changeset/`.
+2. After the PR is merged, the workflow opens a "Version Packages" PR that bumps
+   `package.json` and adds the entry to `CHANGELOG.md`.
+3. Merging the "Version Packages" PR publishes to npm with provenance (npm
+   trusted publishing, no token) and pushes the `vX.Y.Z` tag.
 
 ## License
 

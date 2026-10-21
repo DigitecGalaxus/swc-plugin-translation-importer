@@ -6,8 +6,6 @@
 
 - f0afd62: Publish from GitHub Actions with npm provenance
 
-All notable changes to this project will be documented in this file.
-
 ## [5.0.0] 2025-11-04
 
 - [**breaking**] Add support for Next.js 16.0.1 Update to swc_core 45.0.2 (compatible with @swc/core@1.13.21)
