@@ -1,6 +1,6 @@
 [package]
 name = "swc-plugin-translation-importer"
-version = "3.0.0"
+version = "7.0.0"
 edition = "2021"
 
 [lib]
