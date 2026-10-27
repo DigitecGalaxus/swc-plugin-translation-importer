@@ -1,6 +1,10 @@
 # Changelog
 
-All notable changes to this project will be documented in this file.
+## 7.0.1
+
+### Patch Changes
+
+- f0afd62: Publish from GitHub Actions with npm provenance
 
 ## [7.0.0] 2026-10-20
 
